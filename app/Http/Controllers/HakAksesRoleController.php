@@ -9,18 +9,20 @@ use App\Models\HakAksesRole;
 class HakAksesRoleController extends Controller
 {
     private array $modules = [
-        'instansi'        => 'Master Data Instansi',
-        'divisi'          => 'Master Data Divisi',
-        'jabatan'         => 'Master Data Jabatan',
-        'status_karyawan' => 'Master Data Status Karyawan',
-        'gaji_pokok'      => 'Master Data Komponen Gaji',
-        'karyawan'        => 'Data Karyawan',
-        'gaji_karyawan'   => 'Pengaturan Gaji Karyawan',
-        'absensi'         => 'Rekap Absensi',
-        'lembur'          => 'Lembur Karyawan',
-        'kasbon'          => 'Kasbon Karyawan',
-        'payroll'         => 'Payroll & Penggajian',
-        'user_management' => 'User Management & Hak Akses',
+        'instansi'             => 'Master Data Instansi',
+        'divisi'               => 'Master Data Divisi',
+        'jabatan'              => 'Master Data Jabatan',
+        'status_karyawan'      => 'Master Data Status Karyawan',
+        'gaji_pokok'           => 'Master Data Komponen Gaji',
+        'karyawan'             => 'Data Karyawan',
+        'gaji_karyawan'        => 'Pengaturan Gaji Karyawan',
+        'absensi'              => 'Rekap & Input Absensi',
+        'lembur'               => 'Lembur Karyawan',
+        'kasbon'               => 'Kasbon Karyawan',
+        'payroll'              => 'Payroll & Penggajian',
+        'pengaturan_jam_kerja' => 'Pengaturan Jam Kerja & Toleransi',
+        'reset_password'       => 'Permintaan Reset Password',
+        'user_management'      => 'User Management & Hak Akses',
     ];
 
     public function index(Request $request)

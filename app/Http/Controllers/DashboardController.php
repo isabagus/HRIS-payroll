@@ -49,13 +49,15 @@ class DashboardController extends Controller
             ->whereTime('jam_masuk', '>', '08:00:00')
             ->count();
 
-        // Total kasbon aktif (Pending + Disetujui)
+        // Total kasbon aktif (Disetujui & Belum Lunas)
         $totalKasbon = DB::table('kasbons')
-            ->whereIn('status', ['Pending', 'Disetujui'])
+            ->where('status_approval', 'disetujui')
+            ->where('status_pelunasan', 'belum_lunas')
             ->sum('total_kasbon');
 
         $jumlahKasbonAktif = DB::table('kasbons')
-            ->whereIn('status', ['Pending', 'Disetujui'])
+            ->where('status_approval', 'disetujui')
+            ->where('status_pelunasan', 'belum_lunas')
             ->count();
 
         // ── MASTER DATA COUNTS ───────────────────────────────────

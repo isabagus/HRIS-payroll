@@ -16,10 +16,10 @@ class RoleSeeder extends Seeder
         $adminRole      = Role::firstOrCreate(['nama_role' => 'Admin']);
 
         // Create Default Super Admin User if not existing
-        if (!User::where('username', 'admin')->exists()) {
+        if (!User::where('username', 'root')->exists()) {
             User::create([
-                'username' => 'admin',
-                'password' => Hash::make('password'),
+                'username' => 'root',
+                'password' => Hash::make('root123'),
                 'ID_role'  => $superAdminRole->ID_role,
             ]);
         }
@@ -28,16 +28,16 @@ class RoleSeeder extends Seeder
         if (!User::where('username', 'manager')->exists()) {
             User::create([
                 'username' => 'manager',
-                'password' => Hash::make('password'),
+                'password' => Hash::make('manager123'),
                 'ID_role'  => $managerRole->ID_role,
             ]);
         }
 
         // Create Default Admin User if not existing
-        if (!User::where('username', 'staff_admin')->exists()) {
+        if (!User::where('username', 'admin')->exists()) {
             User::create([
-                'username' => 'staff_admin',
-                'password' => Hash::make('password'),
+                'username' => 'admin',
+                'password' => Hash::make('admin123'),
                 'ID_role'  => $adminRole->ID_role,
             ]);
         }

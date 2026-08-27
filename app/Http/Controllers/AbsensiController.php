@@ -359,16 +359,25 @@ class AbsensiController extends Controller
         $import = new AbsensiImport();
         Excel::import($import, $request->file('file_excel'));
 
-        $msg = "Import selesai: {$import->importedCount} data absensi berhasil diproses.";
-        if ($import->skippedCount > 0) {
-            $msg .= " {$import->skippedCount} data dilewati.";
-        }
+        $totalGagal    = count($import->failedRows);
+        $totalBerhasil = $import->importedCount;
 
-        $flashType = ($import->skippedCount > 0 || $import->importedCount === 0) ? 'warning' : 'success';
+        if ($totalGagal === 0 && $totalBerhasil === 0) {
+            $flashType = 'warning';
+            $msg       = 'Import selesai: Tidak ada data yang dapat diproses dari file ini.';
+        } elseif ($totalGagal === 0) {
+            $flashType = 'success';
+            $msg       = "Import berhasil: {$totalBerhasil} baris absensi berhasil disimpan.";
+        } else {
+            $flashType = 'warning';
+            $msg       = "Import selesai dengan catatan: {$totalBerhasil} baris berhasil disimpan, {$totalGagal} baris gagal diimport.";
+        }
 
         return redirect()->route('absensi.index')
             ->with($flashType, $msg)
-            ->with('import_errors', $import->importErrors);
+            ->with('import_errors', $import->importErrors)
+            ->with('import_failed_rows', $import->failedRows)
+            ->with('import_success_count', $totalBerhasil);
     }
 
     public function tahunan($id, Request $request)

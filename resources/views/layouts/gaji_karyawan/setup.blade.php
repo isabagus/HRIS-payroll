@@ -53,7 +53,11 @@
                             {{ $karyawan->jabatan->nama_jabatan ?? 'Jabatan -' }}
                         </span>
                         <span class="px-2.5 py-0.5 text-xs font-semibold rounded-md bg-emerald-50 text-emerald-700 border border-emerald-100">
-                            {{ $karyawan->instansi->nama_instansi ?? $karyawan->perusahaan ?? 'HRIS' }}
+                            @if($karyawan->id_instansi && $karyawan->instansi)
+                                {{ $karyawan->instansi->nama_instansi }}
+                            @else
+                                <span style="color:#94a3b8; font-style:italic;">Nama Instansi</span>
+                            @endif
                         </span>
                     </div>
                 </div>

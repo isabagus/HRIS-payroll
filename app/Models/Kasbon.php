@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\User;
 
 class Kasbon extends Model
 {
@@ -14,12 +15,17 @@ class Kasbon extends Model
         'total_kasbon',
         'date',
         'deskripsi',
-        'status',
+        'status_approval',
+        'status_pelunasan',
+        'id_approved_by',
+        'tanggal_approval',
+        'catatan_approval',
     ];
 
     protected $casts = [
-        'date'         => 'date',
-        'total_kasbon' => 'float',
+        'date'             => 'date',
+        'total_kasbon'     => 'float',
+        'tanggal_approval' => 'datetime',
     ];
 
     public function karyawan()
@@ -36,6 +42,11 @@ class Kasbon extends Model
     public function getKeteranganAttribute()
     {
         return $this->deskripsi ?? '-';
+    }
+
+    public function approvedBy()
+    {
+        return $this->belongsTo(User::class, 'id_approved_by', 'ID_user');
     }
 
     public function detailPayrolls()
@@ -83,5 +94,18 @@ class Kasbon extends Model
     public function getTotalSudahDibayarAttribute(): float
     {
         return $this->getTotalSudahDibayar();
+    }
+
+    /**
+     * Sinkronkan status_pelunasan dari getSisaKasbon() — lunas jika sisa = 0.
+     */
+    public function syncStatusPelunasan(?int $upToPayrollId = null): void
+    {
+        $sisa = $this->getSisaKasbon($upToPayrollId);
+        $baru = $sisa <= 0 ? 'lunas' : 'belum_lunas';
+
+        if ($this->status_pelunasan !== $baru) {
+            $this->update(['status_pelunasan' => $baru]);
+        }
     }
 }

@@ -15,6 +15,7 @@ class Payroll extends Model
         'gaji_pokok',
         'date',
         'total_masuk',
+        'total_jam_kerja',
         'total_izin',
         'total_alpha',
         'total_gaji',
@@ -29,6 +30,7 @@ class Payroll extends Model
         'date'            => 'date',
         'gaji_pokok'      => 'float',
         'total_masuk'     => 'float',
+        'total_jam_kerja' => 'float',
         'total_gaji'      => 'float',
         'total_lemburan'  => 'float',
         'total_kasbon'    => 'float',
@@ -53,10 +55,38 @@ class Payroll extends Model
         return abs($val);
     }
 
-    // Accessors for column backward compatibility
-    public function getGajiPokokAttribute()
+    /** Tarif gaji pokok per jam (kolom gaji_pokok di DB). */
+    public function getTarifPerJamAttribute(): float
     {
-        return $this->attributes['gaji_pokok'] ?? $this->attributes['total_gaji'] ?? 0;
+        return floatval($this->attributes['gaji_pokok'] ?? 0);
+    }
+
+    /** Total jam kerja efektif — gunakan nilai DB, fallback dari total_gaji ÷ tarif. */
+    public function getTotalJamKerjaEfektifAttribute(): float
+    {
+        $jam = floatval($this->attributes['total_jam_kerja'] ?? 0);
+        if ($jam > 0) {
+            return $jam;
+        }
+
+        $tarif = floatval($this->attributes['gaji_pokok'] ?? 0);
+        $totalGaji = floatval($this->attributes['total_gaji'] ?? 0);
+        if ($tarif > 0 && $totalGaji > 0) {
+            return round($totalGaji / $tarif, 2);
+        }
+
+        return floatval($this->attributes['total_masuk'] ?? 0) * 8.0;
+    }
+
+    /** Gaji pokok kalkulasi = total_jam_kerja × tarif_per_jam. */
+    public function getGajiPokokKalkulasiAttribute(): float
+    {
+        $totalGaji = floatval($this->attributes['total_gaji'] ?? 0);
+        if ($totalGaji > 0) {
+            return $totalGaji;
+        }
+
+        return $this->total_jam_kerja_efektif * $this->tarif_per_jam;
     }
 
     public function getTotalKasbonAttribute()
@@ -69,7 +99,7 @@ class Payroll extends Model
         if (isset($this->attributes['gaji_bersih'])) {
             return $this->attributes['gaji_bersih'];
         }
-        $gp = $this->gaji_pokok;
+        $gp = $this->gaji_pokok_kalkulasi;
         $detailsSubtotal = $this->details->sum('subtotal');
         return max(0, $gp + $detailsSubtotal);
     }

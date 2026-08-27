@@ -90,6 +90,18 @@
             border: 1px solid rgba(99, 102, 241, 0.4);
             border-radius: 12px;
         }
+
+        .error-box {
+            background: rgba(239, 68, 68, 0.25);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            border-radius: 12px;
+        }
+
+        .warning-box {
+            background: rgba(245, 158, 11, 0.25);
+            border: 1px solid rgba(245, 158, 11, 0.4);
+            border-radius: 12px;
+        }
     </style>
 </head>
 <body>
@@ -124,34 +136,46 @@
                             <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
                         </svg>
                         <p class="text-sm text-white/90 leading-relaxed">
-                            Isi form ini untuk mengajukan permintaan reset password. Permintaan akan diproses secara manual oleh <strong>Administrator / HRD</strong> dan password baru akan disampaikan langsung kepada Anda.
+                            Isi form ini untuk mengajukan permintaan reset password Permintaan akan dikirim ke <strong>Administrator / HRD</strong> untuk disetujui. Password baru hanya aktif setelah disetujui.
                         </p>
                     </div>
                 </div>
 
-                {{-- Warning Alert --}}
+                {{-- Error / Warning Alerts --}}
                 @if(session('warning'))
-                    <div class="mb-5 p-4 rounded-xl bg-yellow-500/20 border border-yellow-400/40 text-yellow-100 text-sm">
-                        <div class="flex items-center gap-2 font-semibold mb-1">
+                    <div class="warning-box p-4 mb-5">
+                        <div class="flex items-center gap-2 font-semibold mb-1 text-yellow-100">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 flex-shrink-0 text-yellow-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
                             </svg>
                             Perhatian
                         </div>
-                        {{ session('warning') }}
+                        <p class="text-sm text-yellow-100">{{ session('warning') }}</p>
+                    </div>
+                @endif
+
+                @if(session('error_form'))
+                    <div class="error-box p-4 mb-5">
+                        <div class="flex items-center gap-2 font-semibold mb-1 text-red-100">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 flex-shrink-0 text-red-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+                            </svg>
+                            Gagal
+                        </div>
+                        <p class="text-sm text-red-100">{{ session('error_form') }}</p>
                     </div>
                 @endif
 
                 {{-- Validation Errors --}}
                 @if($errors->any())
-                    <div class="mb-5 p-4 rounded-xl bg-red-500/20 border border-red-400/40 text-red-100 text-sm">
-                        <div class="flex items-center gap-2 font-semibold mb-1">
+                    <div class="error-box p-4 mb-5">
+                        <div class="flex items-center gap-2 font-semibold mb-1 text-red-100">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 flex-shrink-0 text-red-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
                             </svg>
                             Ada Kesalahan
                         </div>
-                        <ul class="list-disc list-inside space-y-0.5 opacity-90">
+                        <ul class="list-disc list-inside space-y-0.5 opacity-90 text-sm text-red-100">
                             @foreach($errors->all() as $error)
                                 <li>{{ $error }}</li>
                             @endforeach
@@ -160,13 +184,35 @@
                 @endif
 
                 {{-- Form --}}
-                <form method="POST" action="{{ route('password.request.store') }}" class="space-y-5">
+                <form method="POST" action="{{ route('password.request.store') }}" class="space-y-4">
                     @csrf
 
-                    {{-- Username / Email --}}
+                    {{-- ID Karyawan --}}
                     <div>
-                        <label for="login" class="block text-sm font-medium text-white/90 mb-1.5">
-                            Username atau Email <span class="text-red-300">*</span>
+                        <label for="kode_karyawan" class="block text-sm font-medium text-white/90 mb-1.5">
+                            ID Karyawan <span class="text-red-300">*</span>
+                        </label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-white/70">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                                </svg>
+                            </div>
+                            <input type="text"
+                                   name="kode_karyawan"
+                                   id="kode_karyawan"
+                                   value="{{ old('kode_karyawan') }}"
+                                   required
+                                   autofocus
+                                   placeholder="Contoh: KRY001"
+                                   class="glass-input w-full pl-11 pr-4 py-3 rounded-xl text-sm font-medium">
+                        </div>
+                    </div>
+
+                    {{-- Username --}}
+                    <div>
+                        <label for="username" class="block text-sm font-medium text-white/90 mb-1.5">
+                            Username <span class="text-red-300">*</span>
                         </label>
                         <div class="relative">
                             <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-white/70">
@@ -176,29 +222,35 @@
                                 </svg>
                             </div>
                             <input type="text"
-                                   name="login"
-                                   id="login"
-                                   value="{{ old('login') }}"
+                                   name="username"
+                                   id="username"
+                                   value="{{ old('username') }}"
                                    required
-                                   autofocus
-                                   placeholder="Masukkan username atau email"
+                                   placeholder="Masukkan username Anda"
                                    class="glass-input w-full pl-11 pr-4 py-3 rounded-xl text-sm font-medium">
                         </div>
                     </div>
 
-                    {{-- Alasan (opsional) --}}
+                    {{-- Password Baru --}}
                     <div>
-                        <label for="alasan" class="block text-sm font-medium text-white/90 mb-1.5">
-                            Alasan / Catatan
-                            <span class="text-white/50 font-normal">(opsional)</span>
+                        <label for="password_baru" class="block text-sm font-medium text-white/90 mb-1.5">
+                            Password Baru <span class="text-red-300">*</span>
                         </label>
                         <div class="relative">
-                            <textarea name="alasan"
-                                      id="alasan"
-                                      rows="3"
-                                      placeholder="Contoh: Lupa password lama, tidak bisa login sejak kemarin..."
-                                      class="glass-input w-full px-4 py-3 rounded-xl text-sm font-medium resize-none">{{ old('alasan') }}</textarea>
+                            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-white/70">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                                </svg>
+                            </div>
+                            <input type="password"
+                                   name="password_baru"
+                                   id="password_baru"
+                                   required
+                                   minlength="6"
+                                   placeholder="Password baru yang Anda inginkan (min. 6 karakter)"
+                                   class="glass-input w-full pl-11 pr-4 py-3 rounded-xl text-sm font-medium">
                         </div>
+                        <p class="text-xs text-white/60 mt-1">Password ini akan aktif setelah permintaan Anda disetujui Admin.</p>
                     </div>
 
                     {{-- Submit Button --}}

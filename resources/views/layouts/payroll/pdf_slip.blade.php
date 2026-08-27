@@ -175,13 +175,24 @@
     {{-- 1. HEADER --}}
     <table class="header-container">
         <tr>
+            @php
+                if (!$logoBase64 && $payroll->karyawan->id_instansi && file_exists(public_path('images/logo.png'))) {
+                    $logoBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents(public_path('images/logo.png')));
+                }
+            @endphp
             @if($logoBase64)
             <td class="logo-cell">
                 <img src="{{ $logoBase64 }}" class="logo-img" alt="Logo">
             </td>
             @endif
             <td class="company-cell">
-                <div class="company-name">{{ $payroll->karyawan->instansi->nama_instansi ?? 'PERUSAHAAN MANUFAKTUR' }}</div>
+                <div class="company-name">
+                    @if($payroll->karyawan->id_instansi && $payroll->karyawan->instansi)
+                        {{ strtoupper($payroll->karyawan->instansi->nama_instansi) }}
+                    @else
+                        NAMA INSTANSI
+                    @endif
+                </div>
                 <div class="slip-title">SLIP GAJI KARYAWAN</div>
             </td>
         </tr>
@@ -201,10 +212,16 @@
         <tr>
             <td class="col-label">Gaji Pokok</td>
             <td class="col-colon">:</td>
-            <td class="col-calc">{{ number_format($totalJamKerja, $totalJamKerja == floor($totalJamKerja) ? 0 : 2, ',', '.') }} jam x Rp. {{ number_format($gajiPokokPerJam, 0, ',', '.') }}</td>
+            <td class="col-calc">{{ number_format($totalJamKerja, $totalJamKerja == floor($totalJamKerja) ? 0 : 2, ',', '.') }} jam x Rp. {{ number_format($gajiPokokPerJam, 0, ',', '.') }}/jam</td>
             <td class="col-eq">=</td>
             <td class="col-val">Rp. {{ number_format($hasilHarian, 0, ',', '.') }}</td>
         </tr>
+        <!-- <tr>
+            <td class="col-label" style="color:#555; font-size:10px;"></td>
+            <td class="col-colon"></td>
+            <td class="col-calc" style="color:#555; font-size:10px; font-style:italic;">Tarif: Rp. {{ number_format($gajiPokokPerJam, 0, ',', '.') }}/jam</td>
+            <td colspan="2"></td>
+        </tr> -->
         <tr>
             <td class="col-label">Uang Makan</td>
             <td class="col-colon">:</td>
@@ -358,6 +375,25 @@
             <td class="col-val">Rp. {{ number_format($subtotalKasbonBulanIni, 0, ',', '.') }}</td>
         </tr>
     </table>
+
+    {{-- 6b. POTONGAN MANUAL / SANKSI / LAIN-LAIN --}}
+    @php
+        $manualDeductions = $payroll->details
+            ->where('jenis', 'manual')
+            ->filter(fn($d) => floatval($d->subtotal) < 0);
+    @endphp
+    @if($manualDeductions->count() > 0)
+    <div class="box-title">Potongan Lain-lain</div>
+    <table class="section-table">
+        @foreach($manualDeductions as $md)
+        <tr>
+            <td style="width:220px;">- {{ $md->keterangan ?: 'Potongan Manual / Sanksi' }}</td>
+            <td class="col-colon">:</td>
+            <td class="col-val">Rp. {{ number_format(abs(floatval($md->subtotal)), 0, ',', '.') }}</td>
+        </tr>
+        @endforeach
+    </table>
+    @endif
 
     {{-- 7. TOTAL AKHIR (TOTAL YANG DITERIMA) --}}
     <div class="thp-box">

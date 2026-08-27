@@ -6,15 +6,32 @@ use App\Models\Kasbon;
 use App\Models\Karyawan;
 use App\Models\DetailPayroll;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 class KasbonController extends Controller
 {
+    private function isAutoApproveRole(): bool
+    {
+        $user = Auth::user();
+        if (!$user || !$user->role) return false;
+
+        $roleName = strtolower($user->role->nama_role ?? '');
+        return str_contains($roleName, 'manager') || str_contains($roleName, 'super admin');
+    }
+
+    private function canApprove(): bool
+    {
+        return $this->isAutoApproveRole();
+    }
+
     public function index(Request $request)
     {
-        $search        = $request->get('search');
-        $filterStatus  = $request->get('status');
-        $filterBulan   = $request->get('bulan', date('m'));
-        $filterTahun   = $request->get('tahun', date('Y'));
+        $search               = $request->get('search');
+        $filterStatusApproval = $request->get('status_approval');
+        $filterStatusPelunasan = $request->get('status_pelunasan');
+        $filterBulan          = $request->get('bulan', date('m'));
+        $filterTahun          = $request->get('tahun', date('Y'));
 
         $kasbons = Kasbon::select('kasbons.*')
             ->leftJoin('karyawans', 'kasbons.ID_karyawan', '=', 'karyawans.ID_karyawan')
@@ -25,28 +42,105 @@ class KasbonController extends Controller
                        ->orWhere('Kode_karyawan', 'like', "%{$search}%");
                 });
             })
-            ->when($filterStatus, fn($q) => $q->where('status', $filterStatus))
+            ->when($filterStatusApproval, fn($q) => $q->where('kasbons.status_approval', $filterStatusApproval))
+            ->when($filterStatusPelunasan, fn($q) => $q->where('kasbons.status_pelunasan', $filterStatusPelunasan))
             ->when($filterBulan, fn($q) => $q->whereMonth('kasbons.date', $filterBulan))
             ->when($filterTahun, fn($q) => $q->whereYear('kasbons.date', $filterTahun))
             ->orderBy('karyawans.Kode_karyawan', 'asc')
             ->paginate(10)
             ->withQueryString();
 
-        // Calculate Stats
         $statsQuery = Kasbon::whereMonth('date', $filterBulan)->whereYear('date', $filterTahun);
 
-        $totalNominalKasbon = (clone $statsQuery)->whereIn('status', ['Disetujui', 'Lunas'])->sum('total_kasbon');
-        $totalPending       = (clone $statsQuery)->where('status', 'Pending')->count();
-        $totalDisetujui     = (clone $statsQuery)->where('status', 'Disetujui')->count();
-        $totalLunas         = (clone $statsQuery)->where('status', 'Lunas')->count();
+        $totalNominalKasbon     = (clone $statsQuery)->where('status_approval', 'disetujui')->sum('total_kasbon');
+        $totalPending           = (clone $statsQuery)->where('status_approval', 'pending')->count();
+        $totalDisetujuiApproval = (clone $statsQuery)->where('status_approval', 'disetujui')->count();
+        $totalLunas             = (clone $statsQuery)->where('status_pelunasan', 'lunas')->count();
 
         $tahunList = range(date('Y'), date('Y') - 5);
 
         return view('layouts.kasbon.index', compact(
-            'kasbons', 'search', 'filterStatus', 'filterBulan', 'filterTahun',
-            'totalNominalKasbon', 'totalPending', 'totalDisetujui', 'totalLunas',
+            'kasbons', 'search', 'filterStatusApproval', 'filterStatusPelunasan', 'filterBulan', 'filterTahun',
+            'totalNominalKasbon', 'totalPending', 'totalDisetujuiApproval', 'totalLunas',
             'tahunList'
         ));
+    }
+
+    public function approvalIndex(Request $request)
+    {
+        if (!$this->canApprove()) {
+            abort(403, 'Akses hanya untuk Manager dan Super Admin.');
+        }
+
+        $search      = $request->get('search');
+        $filterBulan = $request->get('bulan', date('m'));
+        $filterTahun = $request->get('tahun', date('Y'));
+
+        $pendingKasbons = Kasbon::select('kasbons.*')
+            ->leftJoin('karyawans', 'kasbons.ID_karyawan', '=', 'karyawans.ID_karyawan')
+            ->with(['karyawan.divisi', 'karyawan.jabatan'])
+            ->where('kasbons.status_approval', 'pending')
+            ->when($search, function ($q) use ($search) {
+                $q->whereHas('karyawan', function ($q2) use ($search) {
+                    $q2->where('nama_karyawan', 'like', "%{$search}%")
+                       ->orWhere('Kode_karyawan', 'like', "%{$search}%");
+                });
+            })
+            ->when($filterBulan, fn($q) => $q->whereMonth('kasbons.date', $filterBulan))
+            ->when($filterTahun, fn($q) => $q->whereYear('kasbons.date', $filterTahun))
+            ->orderBy('karyawans.Kode_karyawan', 'asc')
+            ->paginate(15)
+            ->withQueryString();
+
+        $totalPending = Kasbon::where('status_approval', 'pending')->count();
+        $tahunList    = range(date('Y'), date('Y') - 5);
+
+        return view('layouts.kasbon.approval', compact(
+            'pendingKasbons', 'search', 'filterBulan', 'filterTahun',
+            'totalPending', 'tahunList'
+        ));
+    }
+
+    public function approvalSetujui(Request $request, Kasbon $kasbon)
+    {
+        if (!$this->canApprove()) {
+            abort(403, 'Akses hanya untuk Manager dan Super Admin.');
+        }
+
+        $kasbon->update([
+            'status_approval'  => 'disetujui',
+            'id_approved_by'   => Auth::id(),
+            'tanggal_approval' => Carbon::now(),
+            'catatan_approval' => null,
+        ]);
+
+        $redirectRoute = $request->input('from') === 'approval' ? 'kasbon.approval' : 'kasbon.index';
+
+        return redirect()->route($redirectRoute)
+            ->with('success', 'Kasbon ' . ($kasbon->karyawan->nama_karyawan ?? '') . ' berhasil disetujui.');
+    }
+
+    public function approvalTolak(Request $request, Kasbon $kasbon)
+    {
+        if (!$this->canApprove()) {
+            abort(403, 'Akses hanya untuk Manager dan Super Admin.');
+        }
+
+        $request->validate([
+            'catatan_approval' => 'nullable|string|max:500',
+        ]);
+
+        $kasbon->update([
+            'status_approval'  => 'ditolak',
+            'id_approved_by'   => Auth::id(),
+            'tanggal_approval' => Carbon::now(),
+            'catatan_approval' => $request->input('catatan_approval') ?: null,
+        ]);
+
+        $redirectRoute = $request->input('from') === 'approval' ? 'kasbon.approval' : 'kasbon.index';
+
+        return redirect()->route($redirectRoute)
+            ->with('success', 'Kasbon ' . ($kasbon->karyawan->nama_karyawan ?? '') . ' ditolak.');
     }
 
     public function create()
@@ -57,7 +151,21 @@ class KasbonController extends Controller
 
     public function store(Request $request)
     {
-        // Support Dynamic Multi-Row input
+        $isAutoApprove = $this->isAutoApproveRole();
+        $approvalData  = $isAutoApprove
+            ? [
+                'status_approval'  => 'disetujui',
+                'id_approved_by'   => Auth::id(),
+                'tanggal_approval' => Carbon::now(),
+                'catatan_approval' => null,
+            ]
+            : [
+                'status_approval'  => 'pending',
+                'id_approved_by'   => null,
+                'tanggal_approval' => null,
+                'catatan_approval' => null,
+            ];
+
         if ($request->has('items') && is_array($request->items)) {
             $request->validate([
                 'items.*.ID_karyawan'  => 'required|exists:karyawans,ID_karyawan',
@@ -73,37 +181,38 @@ class KasbonController extends Controller
             foreach ($request->items as $item) {
                 if (empty($item['ID_karyawan']) || empty($item['tanggal'])) continue;
 
-                Kasbon::create([
-                    'ID_karyawan'  => $item['ID_karyawan'],
-                    'date'         => $item['tanggal'],
-                    'total_kasbon' => floatval($item['total_kasbon'] ?? 0),
-                    'deskripsi'    => $item['deskripsi'] ?? '-',
-                    'status'       => $item['status'] ?? 'Disetujui',
-                ]);
+                Kasbon::create(array_merge([
+                    'ID_karyawan'       => $item['ID_karyawan'],
+                    'date'              => $item['tanggal'],
+                    'total_kasbon'      => floatval($item['total_kasbon'] ?? 0),
+                    'deskripsi'         => $item['deskripsi'] ?? '-',
+                    'status_pelunasan'  => 'belum_lunas',
+                ], $approvalData));
                 $inserted++;
             }
 
+            $statusMsg = $isAutoApprove ? 'dan langsung disetujui' : '(menunggu persetujuan Manager)';
             return redirect()->route('kasbon.index')
-                ->with('success', "{$inserted} Data pengajuan kasbon berhasil ditambahkan.");
+                ->with('success', "{$inserted} Data pengajuan kasbon berhasil ditambahkan {$statusMsg}.");
         }
 
-        // Single Input Fallback
         $request->validate([
             'ID_karyawan'  => 'required|exists:karyawans,ID_karyawan',
             'tanggal'      => 'required|date',
             'total_kasbon' => 'required|numeric|min:0',
         ]);
 
-        Kasbon::create([
-            'ID_karyawan'  => $request->ID_karyawan,
-            'date'         => $request->tanggal,
-            'total_kasbon' => floatval($request->total_kasbon),
-            'deskripsi'    => $request->deskripsi ?? '-',
-            'status'       => $request->status ?? 'Disetujui',
-        ]);
+        Kasbon::create(array_merge([
+            'ID_karyawan'      => $request->ID_karyawan,
+            'date'             => $request->tanggal,
+            'total_kasbon'     => floatval($request->total_kasbon),
+            'deskripsi'        => $request->deskripsi ?? '-',
+            'status_pelunasan' => 'belum_lunas',
+        ], $approvalData));
 
+        $statusMsg = $isAutoApprove ? 'dan langsung disetujui' : '(menunggu persetujuan Manager)';
         return redirect()->route('kasbon.index')
-            ->with('success', 'Data kasbon berhasil ditambahkan.');
+            ->with('success', "Data kasbon berhasil ditambahkan {$statusMsg}.");
     }
 
     public function edit(Kasbon $kasbon)
@@ -115,42 +224,24 @@ class KasbonController extends Controller
     public function update(Request $request, Kasbon $kasbon)
     {
         $request->validate([
-            'ID_karyawan'  => 'required|exists:karyawans,ID_karyawan',
-            'tanggal'      => 'required|date',
-            'total_kasbon' => 'required|numeric|min:0',
+            'ID_karyawan'      => 'required|exists:karyawans,ID_karyawan',
+            'tanggal'          => 'required|date',
+            'total_kasbon'     => 'required|numeric|min:0',
+            'status_approval'  => 'nullable|in:pending,disetujui,ditolak',
         ]);
 
         $kasbon->update([
-            'ID_karyawan'  => $request->ID_karyawan,
-            'date'         => $request->tanggal,
-            'total_kasbon' => floatval($request->total_kasbon),
-            'deskripsi'    => $request->deskripsi ?? '-',
-            'status'       => $request->status ?? 'Disetujui',
+            'ID_karyawan'      => $request->ID_karyawan,
+            'date'             => $request->tanggal,
+            'total_kasbon'     => floatval($request->total_kasbon),
+            'deskripsi'        => $request->deskripsi ?? '-',
+            'status_approval'  => $request->status_approval ?? $kasbon->status_approval,
         ]);
+
+        $kasbon->syncStatusPelunasan();
 
         return redirect()->route('kasbon.index')
             ->with('success', 'Data kasbon berhasil diperbarui.');
-    }
-
-    public function approve(Kasbon $kasbon)
-    {
-        $kasbon->update(['status' => 'Disetujui']);
-        return redirect()->route('kasbon.index')
-            ->with('success', 'Pengajuan kasbon berhasil disetujui.');
-    }
-
-    public function reject(Kasbon $kasbon)
-    {
-        $kasbon->update(['status' => 'Ditolak']);
-        return redirect()->route('kasbon.index')
-            ->with('success', 'Pengajuan kasbon ditolak.');
-    }
-
-    public function lunas(Kasbon $kasbon)
-    {
-        $kasbon->update(['status' => 'Lunas']);
-        return redirect()->route('kasbon.index')
-            ->with('success', 'Status kasbon berhasil diubah menjadi Lunas.');
     }
 
     public function destroy(Kasbon $kasbon)
@@ -174,9 +265,7 @@ class KasbonController extends Controller
         $totalSudahDibayar = $kasbon->getTotalSudahDibayar();
         $sisaKasbon        = $kasbon->getSisaKasbon();
 
-        if ($sisaKasbon <= 0 && $totalSudahDibayar > 0 && $kasbon->status !== 'Lunas') {
-            $kasbon->update(['status' => 'Lunas']);
-        }
+        $kasbon->syncStatusPelunasan();
 
         $namaBulan = [
             '01' => 'Januari', '02' => 'Februari', '03' => 'Maret', '04' => 'April',
@@ -184,8 +273,8 @@ class KasbonController extends Controller
             '09' => 'September', '10' => 'Oktober', '11' => 'November', '12' => 'Desember'
         ];
 
-        $history = $details->map(function($d, $idx) use ($namaBulan) {
-            $pDate = $d->payroll?->date;
+        $history = $details->map(function ($d, $idx) use ($namaBulan) {
+            $pDate    = $d->payroll?->date;
             $bulanStr = $pDate ? ($namaBulan[$pDate->format('m')] ?? $pDate->format('F')) : '-';
             $tahunStr = $pDate ? $pDate->format('Y') : '';
             $angsuranKe = $idx + 1;
@@ -209,7 +298,8 @@ class KasbonController extends Controller
                 'total_kasbon'        => $totalKasbon,
                 'total_sudah_dibayar' => $totalSudahDibayar,
                 'sisa_kasbon'         => $sisaKasbon,
-                'status'              => $kasbon->status,
+                'status_approval'     => $kasbon->status_approval,
+                'status_pelunasan'    => $kasbon->status_pelunasan,
                 'deskripsi'           => $kasbon->deskripsi ?? '-',
             ],
             'riwayat' => $history,

@@ -252,11 +252,11 @@
         @endif
 
         {{-- PENGATURAN SECTION --}}
-        @if($isSuperAdmin || ($u && $u->hasHakAkses('user_management', 'read')))
+        @if($isSuperAdmin || ($u && ($u->hasHakAkses('user_management', 'read') || $u->hasHakAkses('pengaturan_jam_kerja', 'read') || $u->hasHakAkses('reset_password', 'read'))))
         <div class="nav-section">
             <span class="nav-section-label">PENGATURAN</span>
             <ul class="nav-list">
-                @if($isSuperAdmin)
+                @if($isSuperAdmin || ($u && $u->hasHakAkses('pengaturan_jam_kerja', 'read')))
                 <li class="nav-item">
                     <a href="/pengaturan-jam-kerja" class="nav-link {{ request()->is('pengaturan-jam-kerja*') ? 'active' : '' }}" data-tooltip="Pengaturan Jam Kerja">
                         <span class="nav-icon">
@@ -268,6 +268,9 @@
                         <span class="nav-text">Jam Kerja & Toleransi</span>
                     </a>
                 </li>
+                @endif
+
+                @if($isSuperAdmin || ($u && $u->hasHakAkses('reset_password', 'read')))
                 <li class="nav-item">
                     <a href="/reset-password-requests" class="nav-link {{ request()->is('reset-password-requests*') ? 'active' : '' }}" data-tooltip="Permintaan Reset Password">
                         <span class="nav-icon">
@@ -284,6 +287,8 @@
                     </a>
                 </li>
                 @endif
+
+                @if($isSuperAdmin || ($u && $u->hasHakAkses('user_management', 'read')))
                 <li class="nav-item has-submenu {{ request()->is('user*') || request()->is('hak-akses*') ? 'open' : '' }}">
                     <a href="#" class="nav-link submenu-toggle {{ request()->is('user*') || request()->is('hak-akses*') ? 'active' : '' }}" data-tooltip="Manajemen User">
                         <span class="nav-icon">
@@ -306,6 +311,7 @@
                         @endif
                     </ul>
                 </li>
+                @endif
             </ul>
         </div>
         @endif

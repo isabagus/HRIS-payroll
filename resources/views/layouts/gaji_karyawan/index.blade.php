@@ -19,7 +19,7 @@
                 </svg>
             </div>
             <div>
-                <h1 class="page-title">Gaji &amp; Komponen Karyawan</h1>
+                <h1 class="page-title">Gaji &amp; Karyawan</h1>
                 <p class="page-subtitle">Kelola komponen tarif gaji pokok, uang makan, dan tunjangan secara transparan</p>
             </div>
         </div>
@@ -28,7 +28,7 @@
     {{-- Filter & Search Card --}}
     <div class="table-card">
         <div class="table-card-header karyawan-header">
-            <h2 class="table-card-title">Daftar Komponen Gaji Karyawan</h2>
+            <h2 class="table-card-title">Daftar Gaji Karyawan</h2>
             <form method="GET" action="{{ route('gaji-karyawan.index') }}" class="filter-search-form" id="form-filter-gaji">
                 <div class="filter-group">
                     <select name="divisi" id="filter-divisi" class="filter-select" onchange="this.form.submit()">

@@ -72,9 +72,11 @@ class LemburController extends Controller
 
     /**
      * Ambil rate gaji per jam dan uang makan per hari dari detail_gaji_karyawans.
-     * Digunakan untuk kalkulasi Lembur Hari Libur:
-     *   - uang_lembur = 8 jam × tarif_per_jam × 2
-     *   - uang_makan  = tarif_uang_makan_per_hari × 2
+     *
+     * Rumus Lembur Hari Libur yang BENAR:
+     *   1. gaji_pokok_sehari = 8 jam × tarif_per_jam
+     *   2. lembur_libur_gaji_pokok = gaji_pokok_sehari × 2
+     *   3. lembur_libur_uang_makan = uang_makan_per_hari × 2
      */
     public function getEmployeeRate($karyawanId, ?string $tanggalLembur = null)
     {
@@ -96,28 +98,35 @@ class LemburController extends Controller
                 $val = floatval($det->nominal_gaji);
 
                 if (str_contains($n, 'pokok')) {
-                    $gajiPokokPerJam = $val;   // ini adalah tarif per jam
+                    $gajiPokokPerJam = $val;   // tarif per jam
                 } elseif (str_contains($n, 'makan')) {
-                    $uangMakanPerHari = $val;  // ini adalah tarif per hari
+                    $uangMakanPerHari = $val;  // tarif uang makan per hari
                 }
             }
         }
 
-        // Lembur Hari Libur: 8 jam × tarif per jam × 2
-        $lemburLiburGajiPokok = max(0, 8 * $gajiPokokPerJam * 2);
-        // Uang makan hari libur: tarif harian × 2
+        // Rumus BENAR Lembur Hari Libur:
+        // Step 1: gaji pokok 1 hari = 8 jam × tarif_per_jam
+        $gajiPokokSehari = 8 * $gajiPokokPerJam;
+        // Step 2: gaji_pokok_sehari × 2 → disimpan ke uang_lembur
+        $lemburLiburGajiPokok = max(0, $gajiPokokSehari * 2);
+        // Step 3: uang_makan_per_hari × 2 → disimpan ke uang_makan (terpisah)
         $lemburLiburUangMakan = max(0, $uangMakanPerHari * 2);
+        // Total gabungan (untuk kalkulasi di JS/frontend)
+        $totalLemburHariLibur = $lemburLiburGajiPokok + $lemburLiburUangMakan;
 
         return [
             'gaji_pokok_per_jam'        => $gajiPokokPerJam,
             'uang_makan_per_hari'       => $uangMakanPerHari,
-            'lembur_libur_gaji_pokok'   => $lemburLiburGajiPokok,
+            // Komponen gaji pokok × 2 → disimpan ke kolom uang_lembur
+            'lembur_libur_total'        => $lemburLiburGajiPokok,
+            // Komponen uang makan × 2 → disimpan ke kolom uang_makan (terpisah)
             'lembur_libur_uang_makan'   => $lemburLiburUangMakan,
-            // Legacy fields untuk backward-compat
+            // Legacy fields untuk backward-compat (API response ke JS)
             'gaji_pokok'                => $gajiPokokPerJam,
             'uang_makan'                => $uangMakanPerHari,
             'base_total'                => $gajiPokokPerJam + $uangMakanPerHari,
-            'holiday_nominal'           => $lemburLiburGajiPokok,
+            'holiday_nominal'           => $totalLemburHariLibur,
         ];
     }
 
@@ -448,39 +457,38 @@ class LemburController extends Controller
     {
         if ($jenisLembur === 'libur') {
             // ── LEMBUR HARI LIBUR ──────────────────────────────────────────
-            // Rumus BENAR: 8 jam × tarif_per_jam × 2 (bukan jam aktual)
+            // Rumus BENAR (sesuai kesepakatan):
+            //   1. gaji_pokok_sehari = 8 × tarif_gaji_pokok_per_jam
+            //   2. uang_lembur       = gaji_pokok_sehari × 2  ← disimpan terpisah
+            //   3. uang_makan        = uang_makan_harian × 2  ← disimpan terpisah
+            // Durasi SELALU 8 jam (tidak bergantung jam aktual)
             $rates = $this->getEmployeeRate($karyawanId, $tanggal);
 
             $jamMulai   = !empty($data['jam_mulai'])   ? $data['jam_mulai']   : '08:00';
             $jamSelesai = !empty($data['jam_selesai']) ? $data['jam_selesai'] : '17:00';
-            $durasi     = 9.0; // default tampilan, tidak dipakai untuk kalkulasi uang
 
-            if ($jamMulai && $jamSelesai) {
-                try {
-                    $t1 = Carbon::parse($jamMulai);
-                    $t2 = Carbon::parse($jamSelesai);
-                    if ($t2->lt($t1)) $t2->addDay();
-                    $durasi = max(0, round($t2->diffInMinutes($t1) / 60, 1));
-                } catch (\Exception $e) {
-                    Log::warning("Lembur: gagal parse jam libur karyawan {$karyawanId}", ['jam_mulai' => $jamMulai, 'jam_selesai' => $jamSelesai]);
-                }
-            }
+            // Durasi hari libur SELALU 8 jam (bukan dari jam aktual, sudah disepakati)
+            $durasi = 8.0;
 
-            $totalUangLembur  = max(0, $rates['lembur_libur_gaji_pokok']);
-            $totalUangMakan   = max(0, $rates['lembur_libur_uang_makan']);
-            $tarifLemburPerJam = 0;
+            // Gaji pokok lembur libur: 8 jam × tarif × 2
+            $totalUangLembur   = max(0, $rates['lembur_libur_total']);
+            // Uang makan lembur libur: uang_makan_harian × 2 — DISIMPAN TERPISAH
+            $totalUangMakan    = max(0, $rates['lembur_libur_uang_makan']);
+            // Tarif per jam (untuk kolom tarif_per_jam di DB)
+            $tarifLemburPerJam = $rates['gaji_pokok_per_jam'];
 
         } else {
             // ── LEMBUR HARIAN ─────────────────────────────────────────────
             $jamMulai   = $data['jam_mulai'] ?? null;
             $jamSelesai = $data['jam_selesai'] ?? null;
+            // Durasi diambil dari input manual (durasi_jam)
             $durasi     = floatval($data['durasi_jam'] ?? 0);
 
             if ($jamMulai && $jamSelesai) {
                 try {
                     $t1 = Carbon::parse($jamMulai);
                     $t2 = Carbon::parse($jamSelesai);
-                    // Gunakan absolute diff, lalu tambah hari jika jam selesai < jam mulai (crossday)
+                    // Tambah hari jika jam selesai < jam mulai (crossday)
                     if ($t2->lt($t1)) $t2->addDay();
                     $diffMenit = (int) $t2->diffInMinutes($t1); // absolute, selalu positif
 
@@ -489,13 +497,15 @@ class LemburController extends Controller
                             'jam_mulai'   => $jamMulai,
                             'jam_selesai' => $jamSelesai,
                         ]);
-                        $durasi = 0;
+                        // Pertahankan nilai durasi_jam dari input jika ada
+                        if ($durasi <= 0) $durasi = 0;
                     } else {
+                        // Jika jam mulai & selesai diisi, hitung dari selisihnya
                         $durasi = round($diffMenit / 60, 1);
                     }
                 } catch (\Exception $e) {
                     Log::warning("Lembur: gagal parse jam harian karyawan {$karyawanId}", ['jam_mulai' => $jamMulai, 'jam_selesai' => $jamSelesai]);
-                    $durasi = 0;
+                    // Fallback ke input durasi_jam manual
                 }
             }
 

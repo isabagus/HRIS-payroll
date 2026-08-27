@@ -35,16 +35,18 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index']);
 
     // Super Admin & User Management
-    Route::get('pengaturan-jam-kerja', [PengaturanJamKerjaController::class, 'index'])->name('pengaturan-jam-kerja.index');
-    Route::put('pengaturan-jam-kerja', [PengaturanJamKerjaController::class, 'update'])->name('pengaturan-jam-kerja.update');
+    Route::get('pengaturan-jam-kerja', [PengaturanJamKerjaController::class, 'index'])->name('pengaturan-jam-kerja.index')->middleware('hak_akses:pengaturan_jam_kerja,read');
+    Route::put('pengaturan-jam-kerja', [PengaturanJamKerjaController::class, 'update'])->name('pengaturan-jam-kerja.update')->middleware('hak_akses:pengaturan_jam_kerja,update');
 
     Route::get('hak-akses', [HakAksesRoleController::class, 'index'])->name('hak-akses.index');
     Route::post('hak-akses', [HakAksesRoleController::class, 'update'])->name('hak-akses.update');
 
-    // Permintaan Reset Password — hanya Super Admin
-    Route::get('reset-password-requests', [ResetPasswordRequestController::class, 'index'])->name('reset-password-requests.index');
-    Route::post('reset-password-requests/{id}/proses', [ResetPasswordRequestController::class, 'proses'])->name('reset-password-requests.proses');
-    Route::post('reset-password-requests/{id}/tolak', [ResetPasswordRequestController::class, 'tolak'])->name('reset-password-requests.tolak');
+    // Permintaan Reset Password
+    Route::get('reset-password-requests', [ResetPasswordRequestController::class, 'index'])->name('reset-password-requests.index')->middleware('hak_akses:reset_password,read');
+    Route::post('reset-password-requests/{id}/setujui', [ResetPasswordRequestController::class, 'setujui'])->name('reset-password-requests.setujui')->middleware('hak_akses:reset_password,update');
+    Route::post('reset-password-requests/{id}/tolak', [ResetPasswordRequestController::class, 'tolak'])->name('reset-password-requests.tolak')->middleware('hak_akses:reset_password,update');
+    Route::put('reset-password-requests/{id}', [ResetPasswordRequestController::class, 'update'])->name('reset-password-requests.update')->middleware('hak_akses:reset_password,update');
+    Route::delete('reset-password-requests/{id}', [ResetPasswordRequestController::class, 'destroy'])->name('reset-password-requests.destroy')->middleware('hak_akses:reset_password,delete');
 
     Route::get('user', [UserController::class, 'index'])->name('user.index')->middleware('hak_akses:user_management,read');
     Route::get('user/create', [UserController::class, 'create'])->name('user.create')->middleware('hak_akses:user_management,create');
@@ -145,6 +147,9 @@ Route::middleware(['auth'])->group(function () {
 
     // Kepegawaian - Kasbon
     Route::get('kasbon/{kasbon}/riwayat', [KasbonController::class, 'riwayat'])->name('kasbon.riwayat')->middleware('hak_akses:kasbon,read');
+    Route::get('kasbon/approval', [KasbonController::class, 'approvalIndex'])->name('kasbon.approval')->middleware('hak_akses:kasbon,update');
+    Route::patch('kasbon/{kasbon}/approval-setujui', [KasbonController::class, 'approvalSetujui'])->name('kasbon.approval-setujui')->middleware('hak_akses:kasbon,update');
+    Route::patch('kasbon/{kasbon}/approval-tolak', [KasbonController::class, 'approvalTolak'])->name('kasbon.approval-tolak')->middleware('hak_akses:kasbon,update');
     Route::patch('kasbon/{kasbon}/approve', [KasbonController::class, 'approve'])->name('kasbon.approve')->middleware('hak_akses:kasbon,update');
     Route::patch('kasbon/{kasbon}/reject', [KasbonController::class, 'reject'])->name('kasbon.reject')->middleware('hak_akses:kasbon,update');
     Route::patch('kasbon/{kasbon}/lunas', [KasbonController::class, 'lunas'])->name('kasbon.lunas')->middleware('hak_akses:kasbon,update');
@@ -157,6 +162,7 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('kasbon/{kasbon}', [KasbonController::class, 'destroy'])->name('kasbon.destroy')->middleware('hak_akses:kasbon,delete');
 
     // Penggajian & Payroll
+    Route::get('payroll/export', [PayrollController::class, 'export'])->name('payroll.export')->middleware('hak_akses:payroll,read');
     Route::get('payroll/review', [PayrollController::class, 'review'])->name('payroll.review')->middleware('hak_akses:payroll,create');
     Route::post('payroll/generate', [PayrollController::class, 'generate'])->name('payroll.generate')->middleware('hak_akses:payroll,create');
     Route::get('payroll/{payroll}/slip', [PayrollController::class, 'slip'])->name('payroll.slip')->middleware('hak_akses:payroll,read');

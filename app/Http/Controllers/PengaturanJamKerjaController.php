@@ -10,8 +10,8 @@ class PengaturanJamKerjaController extends Controller
     private function ensureSuperAdmin()
     {
         $u = auth()->user();
-        if (!$u || strtolower($u->role?->nama_role ?? '') !== 'super admin') {
-            abort(403, 'Halaman ini khusus dapat diakses oleh Super Admin.');
+        if (!$u || (!$u->hasHakAkses('pengaturan_jam_kerja', 'read') && strtolower($u->role?->nama_role ?? '') !== 'super admin')) {
+            abort(403, 'Anda tidak memiliki hak akses untuk halaman Pengaturan Jam Kerja.');
         }
     }
 

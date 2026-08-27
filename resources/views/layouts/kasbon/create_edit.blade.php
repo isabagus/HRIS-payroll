@@ -70,12 +70,11 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Status Kasbon</label>
-                    <select name="status" class="form-select-box">
-                        <option value="Disetujui" {{ old('status', $kasbon->status) == 'Disetujui' ? 'selected' : '' }}>Disetujui</option>
-                        <option value="Pending" {{ old('status', $kasbon->status) == 'Pending' ? 'selected' : '' }}>Pending</option>
-                        <option value="Lunas" {{ old('status', $kasbon->status) == 'Lunas' ? 'selected' : '' }}>Lunas</option>
-                        <option value="Ditolak" {{ old('status', $kasbon->status) == 'Ditolak' ? 'selected' : '' }}>Ditolak</option>
+                    <label class="form-label">Status Approval</label>
+                    <select name="status_approval" class="form-select-box">
+                        <option value="pending" {{ old('status_approval', $kasbon->status_approval) == 'pending' ? 'selected' : '' }}>⏳ Menunggu Approval</option>
+                        <option value="disetujui" {{ old('status_approval', $kasbon->status_approval) == 'disetujui' ? 'selected' : '' }}>✓ Disetujui</option>
+                        <option value="ditolak" {{ old('status_approval', $kasbon->status_approval) == 'ditolak' ? 'selected' : '' }}>✗ Ditolak</option>
                     </select>
                 </div>
             </div>

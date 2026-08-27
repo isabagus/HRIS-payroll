@@ -111,7 +111,11 @@
             </div>
             <div class="detail-item bg-slate-50 p-3 rounded-xl border border-slate-100">
                 <span class="detail-label text-slate-400 font-bold block mb-1">Instansi / Perusahaan</span>
-                <span class="detail-value text-slate-800 font-semibold">{{ $karyawan->instansi->nama_instansi ?? $karyawan->perusahaan ?? '-' }}</span>
+                @if($karyawan->id_instansi && $karyawan->instansi)
+                    <span class="detail-value text-slate-800 font-semibold">{{ $karyawan->instansi->nama_instansi }}</span>
+                @else
+                    <span class="detail-value" style="color:#94a3b8; font-style:italic;">Nama Instansi</span>
+                @endif
             </div>
             <div class="detail-item bg-slate-50 p-3 rounded-xl border border-slate-100">
                 <span class="detail-label text-slate-400 font-bold block mb-1">Masa Kerja</span>

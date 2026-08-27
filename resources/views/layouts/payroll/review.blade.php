@@ -156,8 +156,15 @@
                             </td>
                             <td>
                                 <span class="font-semibold">Rp {{ number_format($item['total_gaji_pokok_harian'], 0, ',', '.') }}</span>
-                                <div class="text-xs text-muted">{{ number_format($item['total_jam_kerja'], $item['total_jam_kerja'] == floor($item['total_jam_kerja']) ? 0 : 2, ',', '.') }} jam @ Rp {{ number_format($item['gaji_pokok_rate'], 0, ',', '.') }}/jam</div>
+                                <div class="text-xs text-muted" style="margin-top:2px;">
+                                    {{ number_format($item['total_jam_kerja'], $item['total_jam_kerja'] == floor($item['total_jam_kerja']) ? 0 : 2, ',', '.') }} jam
+                                    × Rp {{ number_format($item['gaji_pokok_rate'], 0, ',', '.') }}/jam
+                                </div>
+                                <div class="text-xs" style="color:#6366f1; margin-top:1px; font-size:10px;">
+                                    Tarif: Rp {{ number_format($item['gaji_pokok_rate'], 0, ',', '.') }}/jam
+                                </div>
                             </td>
+
                             <td>
                                 <span class="font-semibold">Rp {{ number_format($item['total_uang_makan'], 0, ',', '.') }}</span>
                             </td>

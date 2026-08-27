@@ -186,7 +186,7 @@
             <div class="company-brand">
                 <div class="company-logo">HP</div>
                 <div class="company-info">
-                    <h2>{{ $payroll->karyawan->instansi->nama_instansi ?? 'HRIS PAYROLL SYSTEM' }}</h2>
+                    <h2>{{ ($payroll->karyawan->id_instansi && $payroll->karyawan->instansi) ? $payroll->karyawan->instansi->nama_instansi : 'Nama Instansi' }}</h2>
                     <p>Sistem Penggajian & Managemen Kepegawaian</p>
                 </div>
             </div>
@@ -217,7 +217,9 @@
         </div>
 
         @php
-            $totalGajiHarian = $payroll->total_gaji ?: ($payroll->total_masuk * $payroll->gaji_pokok);
+            $tarifPerJam = floatval($payroll->getAttributes()['gaji_pokok'] ?? 0);
+            $totalJamKerja = $payroll->total_jam_kerja_efektif;
+            $totalGajiHarian = $payroll->gaji_pokok_kalkulasi;
             $totalIncomeSum  = $totalGajiHarian + $payroll->total_lemburan;
         @endphp
 
@@ -230,7 +232,7 @@
                     <span>NOMINAL</span>
                 </div>
                 <div class="breakdown-row">
-                    <span>Gaji Harian ({{ $payroll->total_masuk }} Hari x Rp {{ number_format($payroll->gaji_pokok, 0, ',', '.') }})</span>
+                    <span>Gaji Pokok ({{ number_format($totalJamKerja, $totalJamKerja == floor($totalJamKerja) ? 0 : 2, ',', '.') }} Jam × Rp {{ number_format($tarifPerJam, 0, ',', '.') }}/jam)</span>
                     <span class="val">Rp {{ number_format($totalGajiHarian, 0, ',', '.') }}</span>
                 </div>
 

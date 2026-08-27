@@ -10,7 +10,9 @@ class PermintaanResetPassword extends Model
 
     protected $fillable = [
         'id_user',
-        'alasan',
+        'password_baru_hash',
+        'password_lama_hash',
+        'kode_karyawan_input',
         'status',
         'id_diproses_oleh',
         'tanggal_diproses',

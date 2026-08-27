@@ -41,8 +41,58 @@
         </div>
     </div>
 
-    {{-- Import Errors Alert --}}
-    @if(session('import_errors') && count(session('import_errors')) > 0)
+    {{-- Import Result Summary --}}
+    @if(session('import_failed_rows') && count(session('import_failed_rows')) > 0)
+    <div class="alert-danger-box" style="margin-bottom: 1.25rem;">
+        <div class="alert-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+        </div>
+        <div class="alert-body" style="width:100%;">
+            <strong class="alert-title">
+                Ringkasan Hasil Import —
+                @if(session('import_success_count', 0) > 0)
+                    <span style="color:#16a34a;">{{ session('import_success_count') }} baris berhasil</span>,
+                @endif
+                <span style="color:#dc2626;">{{ count(session('import_failed_rows')) }} baris gagal</span>
+            </strong>
+
+            <div style="margin-top: 0.75rem; overflow-x: auto;">
+                <table style="width:100%; border-collapse:collapse; font-size:0.8rem; background:transparent;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid rgba(220,38,38,0.3);">
+                            <th style="text-align:left; padding: 5px 10px; color: var(--text-secondary, #6b7280); font-weight:600; white-space:nowrap;">Baris Excel</th>
+                            <th style="text-align:left; padding: 5px 10px; color: var(--text-secondary, #6b7280); font-weight:600; white-space:nowrap;">ID / Kode</th>
+                            <th style="text-align:left; padding: 5px 10px; color: var(--text-secondary, #6b7280); font-weight:600; white-space:nowrap;">Nama di File</th>
+                            <th style="text-align:left; padding: 5px 10px; color: var(--text-secondary, #6b7280); font-weight:600;">Alasan Gagal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach(session('import_failed_rows') as $failedRow)
+                        <tr style="border-bottom: 1px solid rgba(220,38,38,0.1);">
+                            <td style="padding: 6px 10px; white-space:nowrap; color: var(--text-secondary, #6b7280);">
+                                {{ $failedRow['baris'] ? 'Baris ' . $failedRow['baris'] : 'Header File' }}
+                            </td>
+                            <td style="padding: 6px 10px; white-space:nowrap; font-family: monospace;">
+                                {{ $failedRow['id'] ?: '-' }}
+                            </td>
+                            <td style="padding: 6px 10px; white-space:nowrap;">
+                                {{ $failedRow['nama'] ?: '-' }}
+                            </td>
+                            <td style="padding: 6px 10px; color: #dc2626;">
+                                {{ $failedRow['alasan'] }}
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    @elseif(session('import_errors') && count(session('import_errors')) > 0)
+    {{-- Fallback: tampilan lama untuk kompatibilitas --}}
     <div class="alert-danger-box">
         <div class="alert-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -53,16 +103,14 @@
         <div class="alert-body">
             <strong class="alert-title">Peringatan: Data gagal diimpor / karyawan belum terdaftar:</strong>
             <ul class="alert-list">
-                @foreach(array_slice(session('import_errors'), 0, 5) as $err)
+                @foreach(session('import_errors') as $err)
                     <li>{{ $err }}</li>
                 @endforeach
-                @if(count(session('import_errors')) > 5)
-                    <li>...dan {{ count(session('import_errors')) - 5 }} catatan lainnya.</li>
-                @endif
             </ul>
         </div>
     </div>
     @endif
+
 
     {{-- 4 Summary Cards for Selected Month --}}
     @php

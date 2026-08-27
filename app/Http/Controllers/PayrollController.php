@@ -10,11 +10,15 @@ use App\Models\DetailGajiKaryawan;
 use App\Models\Absensi;
 use App\Models\Lembur;
 use App\Models\Kasbon;
+use App\Exports\PayrollExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Maatwebsite\Excel\Facades\Excel;
+
 
 class PayrollController extends Controller
 {
@@ -44,7 +48,7 @@ class PayrollController extends Controller
             ->whereYear('date', $filterTahun)
             ->get();
 
-        $totalGajiPokok   = $allPayrollPeriod->sum(fn($p) => $p->total_gaji ?: ($p->total_masuk * $p->gaji_pokok));
+        $totalGajiPokok   = $allPayrollPeriod->sum(fn($p) => $p->gaji_pokok_kalkulasi);
         $totalLemburan    = $allPayrollPeriod->sum(fn($p) => $p->total_lemburan);
         $totalKasbon      = $allPayrollPeriod->sum(fn($p) => $p->total_kasbon);
         $totalPengeluaran = $allPayrollPeriod->sum(fn($p) => $p->gaji_bersih);
@@ -232,17 +236,18 @@ class PayrollController extends Controller
                 ->whereDoesntHave('detailPayrolls')
                 ->get();
 
-            $totalLemburan = $unpaidLemburs->sum(fn($l) => floatval($l->uang_lembur) + floatval($l->uang_makan ?: 10000));
+            $totalLemburan = $unpaidLemburs->sum(fn($l) => floatval($l->uang_lembur) + floatval($l->uang_makan));
 
-            // 3. Kasbon Active Reference
+            // 3. Kasbon Active Reference — hanya kasbon yang SUDAH disetujui approval
             $activeKasbons = Kasbon::where('ID_karyawan', $id)
-                ->where('status', 'Disetujui')
+                ->where('status_approval', 'disetujui')
+                ->where('status_pelunasan', 'belum_lunas')
                 ->get();
             $sisaKasbonAktif = 0;
             foreach ($activeKasbons as $ksb) {
                 $sisa = $ksb->getSisaKasbon();
                 if ($sisa <= 0) {
-                    $ksb->update(['status' => 'Lunas']);
+                    $ksb->syncStatusPelunasan();
                 } else {
                     $sisaKasbonAktif += $sisa;
                 }
@@ -310,14 +315,15 @@ class PayrollController extends Controller
         $payDate = Carbon::createFromDate($tahun, $bulan, 25)->format('Y-m-d');
         $processedCount = 0;
 
-        // PRE-VALIDATION: Check if any kasbon input exceeds remaining kasbon balance
+        // Pre-validation: kasbon yang bisa dipotong HANYA yang status_approval = 'disetujui'
         foreach ($items as $item) {
             $idKaryawan = $item['ID_karyawan'] ?? null;
             $potonganKasbon = floatval($item['potongan_kasbon'] ?? 0);
 
             if ($idKaryawan && $potonganKasbon > 0) {
                 $activeKasbons = Kasbon::where('ID_karyawan', $idKaryawan)
-                    ->where('status', 'Disetujui')
+                    ->where('status_approval', 'disetujui')
+                    ->where('status_pelunasan', 'belum_lunas')
                     ->get();
                 $sisaMax = $activeKasbons->sum(fn($k) => $k->getSisaKasbon());
 
@@ -361,19 +367,20 @@ class PayrollController extends Controller
                 $gajiBersih      = max(0, $totalPendapatan - ($potonganKasbon + $potonganBpjs + $potonganLain));
 
                 $payrollData = [
-                    'ID_karyawan'     => $idKaryawan,
-                    'ID_gaji'         => $item['ID_gaji'] ?? null,
-                    'date'            => $payDate,
-                    'total_masuk'     => $totalMasuk,
-                    'total_izin'      => $totalIzin,
-                    'total_alpha'     => $totalAlpha,
-                    'total_gaji'      => $totalGajiPokokHarian,
-                    'total_lemburan'  => $totalLemburan,
-                    'total_kasbon'    => $potonganKasbon,
-                    'potongan_bpjs'   => $potonganBpjs,
-                    'bpjs_perusahaan' => $bpjsPerusahaan,
-                    'gaji_bersih'     => $gajiBersih,
-                    'status_payroll'  => 'Dibayar',
+                    'ID_karyawan'      => $idKaryawan,
+                    'ID_gaji'          => $item['ID_gaji'] ?? null,
+                    'date'             => $payDate,
+                    'total_masuk'      => $totalMasuk,
+                    'total_jam_kerja'  => floatval($item['total_jam_kerja'] ?? 0),  // simpan jam kerja
+                    'total_izin'       => $totalIzin,
+                    'total_alpha'      => $totalAlpha,
+                    'total_gaji'       => $totalGajiPokokHarian,
+                    'total_lemburan'   => $totalLemburan,
+                    'total_kasbon'     => $potonganKasbon,
+                    'potongan_bpjs'    => $potonganBpjs,
+                    'bpjs_perusahaan'  => $bpjsPerusahaan,
+                    'gaji_bersih'      => $gajiBersih,
+                    'status_payroll'   => 'Dibayar',
                 ];
 
                 if ($hasGajiPokokCol) {
@@ -399,15 +406,16 @@ class PayrollController extends Controller
                         'ID_lembur'  => $lmb->ID_lembur,
                         'ID_kasbon'  => null,
                         'jenis'      => 'lembur',
-                        'subtotal'   => floatval($lmb->uang_lembur) + floatval($lmb->uang_makan ?: 10000),
+                        'subtotal'   => floatval($lmb->uang_lembur) + floatval($lmb->uang_makan),
                         'keterangan' => 'Lembur: ' . ($lmb->tanggal ? $lmb->tanggal->format('d/m/Y') : '-'),
                     ]);
                 }
 
-                // Insert detail_payroll for kasbon
+                // Insert detail_payroll for kasbon — hanya kasbon yang SUDAH disetujui approval
                 if ($potonganKasbon > 0) {
                     $activeKasbons = Kasbon::where('ID_karyawan', $idKaryawan)
-                        ->where('status', 'Disetujui')
+                        ->where('status_approval', 'disetujui')
+                        ->where('status_pelunasan', 'belum_lunas')
                         ->orderBy('date', 'asc')
                         ->get();
 
@@ -418,7 +426,7 @@ class PayrollController extends Controller
                         $sisaKasbon = $ksb->getSisaKasbon();
 
                         if ($sisaKasbon <= 0) {
-                            $ksb->update(['status' => 'Lunas']);
+                            $ksb->syncStatusPelunasan($payroll->ID_payroll);
                             continue;
                         }
 
@@ -434,9 +442,7 @@ class PayrollController extends Controller
 
                         $rem -= $sub;
 
-                        if ($ksb->getSisaKasbon() <= 0) {
-                            $ksb->update(['status' => 'Lunas']);
-                        }
+                        $ksb->syncStatusPelunasan($payroll->ID_payroll);
                     }
                 }
 
@@ -534,8 +540,9 @@ class PayrollController extends Controller
             }
         }
 
-        // Ultimate fallback to default logo.png
-        if (!$logoBase64 && file_exists(public_path('images/logo.png'))) {
+        // Ultimate fallback ke logo.png HANYA jika karyawan memiliki instansi terdaftar.
+        // Jika id_instansi NULL/kosong, JANGAN tampilkan logo apapun di PDF.
+        if (!$logoBase64 && $instansi && $payroll->karyawan->id_instansi && file_exists(public_path('images/logo.png'))) {
             $logoBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents(public_path('images/logo.png')));
         }
 
@@ -575,8 +582,8 @@ class PayrollController extends Controller
             }
         }
 
-        if ($gajiPokokPerJam <= 0 && $payroll->gaji_pokok > 0) {
-            $gajiPokokPerJam = floatval($payroll->gaji_pokok);
+        if ($gajiPokokPerJam <= 0 && floatval($payroll->getAttributes()['gaji_pokok'] ?? 0) > 0) {
+            $gajiPokokPerJam = floatval($payroll->getAttributes()['gaji_pokok']);
         }
 
         // Attendance weeks & total hours
@@ -588,10 +595,15 @@ class PayrollController extends Controller
             ->whereYear('date', $tahun)
             ->get();
 
-        $totalJamKerja = 0.0;
-        foreach ($absensis as $a) {
-            $calc = \App\Services\AbsensiService::hitungJamKerja($payroll->karyawan, $a->jam_masuk, $a->jam_pulang, $a->status_absensi);
-            $totalJamKerja += $calc['total_jam_kerja'];
+        // Gunakan total_jam_kerja yang tersimpan di DB jika ada
+        $totalJamKerja = floatval($payroll->total_jam_kerja ?? 0);
+
+        // Hitung ulang dari absensi jika kolom DB kosong (fallback untuk payroll lama)
+        if ($totalJamKerja <= 0) {
+            foreach ($absensis as $a) {
+                $calc = \App\Services\AbsensiService::hitungJamKerja($payroll->karyawan, $a->jam_masuk, $a->jam_pulang, $a->status_absensi);
+                $totalJamKerja += $calc['total_jam_kerja'];
+            }
         }
 
         if ($totalJamKerja <= 0 && $totalMasuk > 0) {
@@ -687,7 +699,7 @@ class PayrollController extends Controller
         $subtotalGajiSampaiLembur = $hasilHarian + $hasilUangMakan + $hasilMingguan + $hasilBulanan + $hasilKerajinan + $hasilTunjanganJabatan + $totalLemburSistem;
 
         // 4. BPJS
-        $bpjsKantor   = floatval($payroll->bpjs_perusahaan ?? 40000);
+        $bpjsKantor   = floatval($payroll->bpjs_perusahaan ?? 95000);
         $bpjsKaryawan = floatval($payroll->potongan_bpjs ?? 40000);
         $totalBpjs    = $bpjsKantor + $bpjsKaryawan;
 
@@ -733,10 +745,55 @@ class PayrollController extends Controller
         return $pdf->stream($filename);
     }
 
+    public function export(Request $request)
+    {
+        $bulan = $request->get('bulan', date('m'));
+        $tahun = $request->get('tahun', date('Y'));
+
+        $namaBulan = [
+            '01' => 'Januari',  '02' => 'Februari', '03' => 'Maret',
+            '04' => 'April',    '05' => 'Mei',       '06' => 'Juni',
+            '07' => 'Juli',     '08' => 'Agustus',   '09' => 'September',
+            '10' => 'Oktober',  '11' => 'November',  '12' => 'Desember',
+        ];
+        $bulanLabel = $namaBulan[str_pad($bulan, 2, '0', STR_PAD_LEFT)] ?? $bulan;
+        $filename   = "Rekap_Payroll_{$bulanLabel}_{$tahun}.xlsx";
+
+        return Excel::download(new PayrollExport($bulan, $tahun), $filename);
+    }
+
     public function destroy(Payroll $payroll)
     {
-        $payroll->delete();
+        DB::transaction(function () use ($payroll) {
+            // 1. Ambil semua detail_payroll jenis='kasbon' milik payroll ini
+            $kasbonDetails = $payroll->details()->where('jenis', 'kasbon')->get();
+
+            foreach ($kasbonDetails as $detail) {
+                $kasbonId = $detail->ID_kasbon;
+
+                // 2. Hapus baris detail_payroll (sisa kasbon otomatis bertambah kembali)
+                $detail->delete();
+
+                // 3. Jika kasbon terkait statusnya 'Lunas', kembalikan ke 'Disetujui'
+                if ($kasbonId) {
+                    $kasbon = Kasbon::find($kasbonId);
+                    if ($kasbon && $kasbon->status_pelunasan === 'lunas') {
+                        if ($kasbon->getSisaKasbon() > 0) {
+                            $kasbon->update(['status_pelunasan' => 'belum_lunas']);
+                        }
+                    }
+                }
+            }
+
+            // 4. Hapus semua detail_payroll jenis='lembur' milik payroll ini
+            // Agar lembur kembali berstatus belum tertagih dan bisa diproses ulang
+            $payroll->details()->where('jenis', 'lembur')->delete();
+
+            // 5. Hapus payroll utama
+            $payroll->delete();
+        });
+
         return redirect()->route('payroll.index')
-            ->with('success', 'Data payroll berhasil dihapus.');
+            ->with('success', 'Data payroll berhasil dihapus. Cicilan kasbon dan lembur terkait telah di-rollback.');
     }
 }

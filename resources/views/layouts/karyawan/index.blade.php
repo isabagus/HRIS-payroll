@@ -230,7 +230,11 @@
                             </div>
                         </td>
                         <td>
-                            <span class="text-sm font-medium">{{ $k->instansi->nama_instansi ?? ($k->perusahaan ?? 'Instansi Utama') }}</span>
+                            @if($k->id_instansi && $k->instansi)
+                                <span class="text-sm font-medium">{{ $k->instansi->nama_instansi }}</span>
+                            @else
+                                <span class="text-sm" style="color:#94a3b8; font-style:italic;">Nama Instansi</span>
+                            @endif
                         </td>
                         <td class="text-center">
                             @if($k->jenis_kelamin === 'L')

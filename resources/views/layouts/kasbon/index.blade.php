@@ -24,6 +24,18 @@
             </div>
         </div>
         <div class="page-header-actions">
+            @php $userRole = strtolower(Auth::user()->role->nama_role ?? ''); @endphp
+            @if(str_contains($userRole, 'manager') || str_contains($userRole, 'super admin'))
+            <a href="{{ route('kasbon.approval') }}" class="btn-secondary-action" style="margin-right:8px;" id="btn-approval-kasbon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px;height:16px">
+                    <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                Approval Kasbon
+                @if(isset($totalPending) && $totalPending > 0)
+                    <span style="background:#f59e0b;color:#fff;border-radius:50%;width:18px;height:18px;font-size:10px;display:inline-flex;align-items:center;justify-content:center;margin-left:4px;">{{ $totalPending }}</span>
+                @endif
+            </a>
+            @endif
             <a href="{{ route('kasbon.create') }}" class="btn-primary-action" id="btn-tambah-kasbon">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
@@ -74,7 +86,7 @@
                 </svg>
             </div>
             <div class="stat-card-info">
-                <span class="stat-card-value">{{ number_format($totalDisetujui) }}</span>
+                <span class="stat-card-value">{{ number_format($totalDisetujuiApproval) }}</span>
                 <span class="stat-card-label">Kasbon Disetujui</span>
             </div>
         </div>
@@ -98,12 +110,17 @@
 
             <form method="GET" action="{{ route('kasbon.index') }}" class="filter-search-form">
                 <div class="filter-group">
-                    <select name="status" class="filter-select" onchange="this.form.submit()">
-                        <option value="">Semua Status</option>
-                        <option value="Disetujui" {{ $filterStatus === 'Disetujui' ? 'selected' : '' }}>Disetujui</option>
-                        <option value="Pending" {{ $filterStatus === 'Pending' ? 'selected' : '' }}>Pending</option>
-                        <option value="Lunas" {{ $filterStatus === 'Lunas' ? 'selected' : '' }}>Lunas</option>
-                        <option value="Ditolak" {{ $filterStatus === 'Ditolak' ? 'selected' : '' }}>Ditolak</option>
+                    <select name="status_approval" class="filter-select" onchange="this.form.submit()">
+                        <option value="">Semua Approval</option>
+                        <option value="pending" {{ $filterStatusApproval === 'pending' ? 'selected' : '' }}>⏳ Menunggu Approval</option>
+                        <option value="disetujui" {{ $filterStatusApproval === 'disetujui' ? 'selected' : '' }}>✓ Approval Disetujui</option>
+                        <option value="ditolak" {{ $filterStatusApproval === 'ditolak' ? 'selected' : '' }}>✗ Approval Ditolak</option>
+                    </select>
+
+                    <select name="status_pelunasan" class="filter-select" onchange="this.form.submit()">
+                        <option value="">Semua Pelunasan</option>
+                        <option value="belum_lunas" {{ $filterStatusPelunasan === 'belum_lunas' ? 'selected' : '' }}>Belum Lunas</option>
+                        <option value="lunas" {{ $filterStatusPelunasan === 'lunas' ? 'selected' : '' }}>Lunas</option>
                     </select>
 
                     <select name="bulan" class="filter-select" onchange="this.form.submit()">
@@ -142,7 +159,8 @@
                         <th>TANGGAL PENGAMBILAN</th>
                         <th>NOMINAL KASBON</th>
                         <th>KETERANGAN / KEPERLUAN</th>
-                        <th class="text-center">STATUS</th>
+                        <th class="text-center">STATUS APPROVAL</th>
+                        <th class="text-center">STATUS PELUNASAN</th>
                         <th width="140" class="text-center">AKSI</th>
                     </tr>
                 </thead>
@@ -168,7 +186,7 @@
                         <td class="font-bold text-danger" style="font-size:0.95rem;">
                             Rp {{ number_format($item->total_kasbon, 0, ',', '.') }}
                             @php $sisaItem = $item->getSisaKasbon(); @endphp
-                            @if($sisaItem < $item->total_kasbon && $item->status !== 'Lunas')
+                            @if($sisaItem < $item->total_kasbon && $item->status_pelunasan !== 'lunas')
                                 <div class="text-xs text-muted font-normal" style="font-size:10px; margin-top:2px;">
                                     Sisa: <strong style="color:#d97706;">Rp {{ number_format($sisaItem, 0, ',', '.') }}</strong>
                                 </div>
@@ -178,42 +196,39 @@
                             <span class="text-sm text-muted">{{ $item->keterangan ?? '-' }}</span>
                         </td>
                         <td class="text-center">
-                            @php
-                                $badgeClass = match($item->status) {
-                                    'Disetujui' => 'badge-hadir',
-                                    'Pending'   => 'badge-izin',
-                                    'Lunas'     => 'badge-kode',
-                                    'Ditolak'   => 'badge-alpha',
-                                    default     => 'badge-kode',
-                                };
-                            @endphp
-                            <span class="badge-absensi {{ $badgeClass }}">
-                                {{ $item->status }}
-                            </span>
+                            @if($item->status_approval === 'pending')
+                                <span class="badge-absensi" style="background:#fef3c7;color:#92400e;border-color:#fde68a;font-size:11px;">⏳ Pending</span>
+                            @elseif($item->status_approval === 'disetujui')
+                                <span class="badge-absensi badge-hadir" style="font-size:11px;">✓ Disetujui</span>
+                            @elseif($item->status_approval === 'ditolak')
+                                <span class="badge-absensi badge-alpha" style="font-size:11px;">✗ Ditolak</span>
+                            @else
+                                <span class="badge-absensi badge-kode" style="font-size:11px;">—</span>
+                            @endif
+                        </td>
+                        <td class="text-center">
+                            @if($item->status_pelunasan === 'lunas')
+                                <span class="badge-absensi badge-hadir" style="font-size:11px;">Lunas</span>
+                            @else
+                                <span class="badge-absensi badge-izin" style="font-size:11px;">Belum Lunas</span>
+                            @endif
                         </td>
                         <td class="text-center">
                             <div class="action-buttons">
-                                @if($item->status === 'Pending')
-                                    <form action="{{ route('kasbon.approve', $item->ID_kasbon) }}" method="POST" style="display:inline">
+                                @php $canApprove = str_contains(strtolower(Auth::user()->role->nama_role ?? ''), 'manager') || str_contains(strtolower(Auth::user()->role->nama_role ?? ''), 'super admin'); @endphp
+                                @if($item->status_approval === 'pending' && $canApprove)
+                                    <form action="{{ route('kasbon.approval-setujui', $item->ID_kasbon) }}" method="POST" style="display:inline">
                                         @csrf
                                         @method('PATCH')
                                         <button type="submit" class="btn-action btn-action-edit" style="background:#ecfdf5; color:#10b981;" title="Setujui Kasbon">
                                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                                         </button>
                                     </form>
-                                    <form action="{{ route('kasbon.reject', $item->ID_kasbon) }}" method="POST" style="display:inline">
+                                    <form action="{{ route('kasbon.approval-tolak', $item->ID_kasbon) }}" method="POST" style="display:inline">
                                         @csrf
                                         @method('PATCH')
-                                        <button type="submit" class="btn-action btn-action-delete" title="Tolak Kasbon">
+                                        <button type="submit" class="btn-action btn-action-delete" title="Tolak Kasbon" onclick="return confirm('Tolak kasbon ini?')">
                                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                                        </button>
-                                    </form>
-                                @elseif($item->status === 'Disetujui')
-                                    <form action="{{ route('kasbon.lunas', $item->ID_kasbon) }}" method="POST" style="display:inline">
-                                        @csrf
-                                        @method('PATCH')
-                                        <button type="submit" class="btn-action btn-action-edit" style="background:#f0fdf4; color:#166534; border-color:#bbf7d0;" title="Tandai Lunas">
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                                         </button>
                                     </form>
                                 @endif

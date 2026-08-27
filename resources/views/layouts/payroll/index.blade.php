@@ -24,6 +24,16 @@
             </div>
         </div>
         <div class="page-header-actions">
+            <a href="{{ route('payroll.export', ['bulan' => $filterBulan, 'tahun' => $filterTahun]) }}"
+               class="btn-import-action" id="btn-export-payroll"
+               title="Export rekap payroll periode {{ $filterBulan }}/{{ $filterTahun }} ke Excel">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                Export Excel
+            </a>
             <form action="{{ route('payroll.review') }}" method="GET" style="display:inline">
                 <input type="hidden" name="bulan" value="{{ $filterBulan }}">
                 <input type="hidden" name="tahun" value="{{ $filterTahun }}">
@@ -35,6 +45,7 @@
                 </button>
             </form>
         </div>
+
     </div>
 
     @php
@@ -156,14 +167,20 @@
                                 </div>
                                 <div class="data-name-info">
                                     <span class="data-name">{{ $p->karyawan->nama_karyawan ?? '-' }}</span>
-                                    <span class="data-sub">{{ $p->karyawan->divisi->nama_divisi ?? '-' }} • {{ $p->karyawan->instansi->nama_instansi ?? 'Instansi Utama' }}</span>
+                                    <span class="data-sub">{{ $p->karyawan->divisi->nama_divisi ?? '-' }} • {{ ($p->karyawan->id_instansi && $p->karyawan->instansi) ? $p->karyawan->instansi->nama_instansi : 'Nama Instansi' }}</span>
                                 </div>
                             </div>
                         </td>
                         <td>
                             <span class="font-semibold" style="color:var(--text-primary);">
-                                Rp {{ number_format($p->gaji_pokok, 0, ',', '.') }}
+                                Rp {{ number_format($p->gaji_pokok_kalkulasi, 0, ',', '.') }}
                             </span>
+                            @if($p->tarif_per_jam > 0)
+                            <div class="text-xs text-muted" style="margin-top:2px;">
+                                {{ number_format($p->total_jam_kerja_efektif, $p->total_jam_kerja_efektif == floor($p->total_jam_kerja_efektif) ? 0 : 2, ',', '.') }} jam
+                                × Rp {{ number_format($p->tarif_per_jam, 0, ',', '.') }}/jam
+                            </div>
+                            @endif
                         </td>
                         <td>
                             <div style="display:flex; gap:4px; flex-wrap:wrap;">

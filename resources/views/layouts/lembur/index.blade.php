@@ -227,7 +227,13 @@
                             {{ $item->jam_mulai ? substr($item->jam_mulai, 0, 5) : '-' }} –
                             {{ $item->jam_selesai ? substr($item->jam_selesai, 0, 5) : '-' }}
                         </td>
-                        <td class="text-center font-semibold">{{ $item->durasi_jam ?? 0 }} Jam</td>
+                        <td class="text-center font-semibold">
+                            @if(($item->jenis_lembur ?? 'harian') === 'libur')
+                                <span title="Lembur hari libur selalu dihitung 8 jam">8 Jam</span>
+                            @else
+                                {{ number_format($item->durasi_lembur ?? 0, $item->durasi_lembur == floor($item->durasi_lembur ?? 0) ? 0 : 1, ',', '.') }} Jam
+                            @endif
+                        </td>
                         <td class="font-bold text-success">
                             Rp {{ number_format(floatval($item->uang_lembur) + floatval($item->uang_makan), 0, ',', '.') }}
                             @if($item->catatan_approval && $item->status_persetujuan === 'Ditolak')
