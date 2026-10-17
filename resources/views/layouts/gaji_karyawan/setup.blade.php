@@ -124,7 +124,7 @@
                 <label class="form-label text-xs font-bold text-indigo-900 block mb-1">
                     Gaji Pokok / Jam (Rp) <span class="text-rose-500">*</span>
                 </label>
-                <input type="number" min="0" step="500" name="gaji_pokok" class="form-input w-full text-base font-bold text-indigo-900 rounded-xl"
+                <input type="number" min="0" step="any" name="gaji_pokok" class="form-input w-full text-base font-bold text-indigo-900 rounded-xl"
                        value="{{ old('gaji_pokok', $gajiPokokVal) }}" placeholder="7500" required>
             </div>
 
@@ -146,7 +146,7 @@
                             <label class="form-label text-xs font-semibold text-slate-700 block mb-1">
                                 {{ $komp->nama_gaji }} <span class="text-slate-400 font-normal">{{ $unit }}</span>
                             </label>
-                            <input type="number" min="0" step="1000" name="komponen[{{ $komp->ID_komponen_gaji }}]"
+                            <input type="number" min="0" step="any" name="komponen[{{ $komp->ID_komponen_gaji }}]"
                                    class="form-input w-full text-sm rounded-xl"
                                    value="{{ old('komponen.'.$komp->ID_komponen_gaji, $val > 0 ? $val : '') }}" placeholder="0">
                         </div>

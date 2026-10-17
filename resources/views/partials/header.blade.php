@@ -38,7 +38,7 @@
 
     <div class="topbar-right">
         {{-- Search --}}
-        <div class="topbar-search">
+        <!-- <div class="topbar-search">
             <span class="search-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="11" cy="11" r="8"/>
@@ -47,7 +47,7 @@
             </span>
             <input type="text" class="search-input" id="globalSearch" placeholder="Cari karyawan, payroll...">
             <span class="search-shortcut">Ctrl+K</span>
-        </div>
+        </div> -->
 
         <div class="topbar-divider"></div>
 

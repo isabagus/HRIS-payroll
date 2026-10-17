@@ -52,7 +52,7 @@
             <div class="form-group">
                 <label class="form-label">Gaji Pokok / Hari (Rp) <span class="required-mark">*</span></label>
                 <div class="input-wrapper">
-                    <input type="number" name="gaji_pokok" class="form-input" value="{{ old('gaji_pokok', $karyawan->gaji_pokok ?: 50000) }}" required placeholder="Misal: 50000 (Rp 50.000/hari)" style="font-weight:700; font-size:1.1rem; color:var(--primary);">
+                    <input type="number" step="any" name="gaji_pokok" class="form-input" value="{{ old('gaji_pokok', $karyawan->gaji_pokok ?: 50000) }}" required placeholder="Misal: 50000 (Rp 50.000/hari)" style="font-weight:700; font-size:1.1rem; color:var(--primary);">
                 </div>
             </div>
 
@@ -69,7 +69,7 @@
                     <div class="form-group">
                         <label class="form-label">{{ $komp->nama_gaji }} (Rp)</label>
                         <div class="input-wrapper">
-                            <input type="number" name="komponen[{{ $komp->ID_komponen_gaji }}]" class="form-input" value="{{ old('komponen.'.$komp->ID_komponen_gaji, $nomVal) }}" placeholder="0">
+                            <input type="number" step="any" name="komponen[{{ $komp->ID_komponen_gaji }}]" class="form-input" value="{{ old('komponen.'.$komp->ID_komponen_gaji, $nomVal) }}" placeholder="0">
                         </div>
                     </div>
                 @endforeach

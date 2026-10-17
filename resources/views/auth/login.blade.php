@@ -136,7 +136,7 @@
                     {{-- Username / Email Input --}}
                     <div>
                         <label for="login" class="block text-sm font-medium text-white/90 mb-1.5">
-                            Email atau Username
+                            Username
                         </label>
                         <div class="relative">
                             <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-white/70">
@@ -213,7 +213,7 @@
 
                 {{-- Card Footer --}}
                 <div class="mt-8 pt-4 border-t border-white/10 text-center text-xs text-white/70">
-                    &copy; {{ date('Y') }} HRIS Payroll. Powered By For I.Studio.
+                    &copy; {{ date('Y') }} HRIS Payroll. Powered By Forchais.Id
                 </div>
 
             </div>

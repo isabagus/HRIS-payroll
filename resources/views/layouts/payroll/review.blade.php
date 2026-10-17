@@ -196,7 +196,7 @@
 
                             {{-- EDITABLE MANUALLY POTONGAN KASBON INPUT --}}
                             <td>
-                                <input type="number" min="0" max="{{ $item['sisa_kasbon_aktif'] }}"
+                                <input type="number" min="0" max="{{ $item['sisa_kasbon_aktif'] }}" step="any"
                                        name="items[{{ $idx }}][potongan_kasbon]"
                                        id="kasbon-input-{{ $idx }}"
                                        class="form-input text-right input-kasbon-manual"
@@ -215,7 +215,7 @@
 
                             {{-- EDITABLE MANUALLY POTONGAN LAINNYA / SANKSI INPUT --}}
                             <td>
-                                <input type="number" min="0" step="1000"
+                                <input type="number" min="0" step="any"
                                        name="items[{{ $idx }}][potongan_lain]"
                                        id="lain-input-{{ $idx }}"
                                        class="form-input text-right"
@@ -231,7 +231,7 @@
 
                             {{-- EDITABLE MANUALLY BPJS KARYAWAN INPUT --}}
                             <td>
-                                <input type="number" min="0" step="1000"
+                                <input type="number" min="0" step="any"
                                        name="items[{{ $idx }}][potongan_bpjs]"
                                        id="bpjs-input-{{ $idx }}"
                                        class="form-input text-right"
@@ -247,7 +247,7 @@
 
                             {{-- EDITABLE MANUALLY BPJS KANTOR / PERUSAHAAN INPUT --}}
                             <td>
-                                <input type="number" min="0" step="1000"
+                                <input type="number" min="0" step="any"
                                        name="items[{{ $idx }}][bpjs_perusahaan]"
                                        id="bpjs-kantor-input-{{ $idx }}"
                                        class="form-input text-right"
