@@ -11,5 +11,6 @@ class KomponenGaji extends Model
 
     protected $fillable = [
         'nama_gaji',
+        'jenis',
     ];
 }

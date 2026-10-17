@@ -56,13 +56,17 @@
                 </div>
             </div>
 
-            <div style="margin: 24px 0 12px; font-weight: 700; font-size: 0.95rem; color: var(--text-primary);">
-                Komponen Tunjangan & Potongan Lainnya
-            </div>
+            @php
+                $pendapatanKomps = $komponens->filter(fn($k) => ($k->jenis ?? 'pendapatan') === 'pendapatan' && strtolower($k->nama_gaji) !== 'gaji pokok');
+                $potonganKomps   = $komponens->filter(fn($k) => ($k->jenis ?? 'pendapatan') === 'potongan');
+            @endphp
 
+            @if($pendapatanKomps->isNotEmpty())
+            <div style="margin: 24px 0 12px; font-weight: 700; font-size: 0.95rem; color: #166534; display:flex; align-items:center; gap:8px;">
+                <span>🟢</span> Komponen Pendapatan &amp; Tunjangan Tambahan
+            </div>
             <div class="form-row form-row-2">
-                @foreach($komponens as $komp)
-                    @if(strtolower($komp->nama_gaji) === 'gaji pokok') @continue @endif
+                @foreach($pendapatanKomps as $komp)
                     @php
                         $nomVal = isset($details[$komp->ID_komponen_gaji]) ? $details[$komp->ID_komponen_gaji]->nominal_gaji : 0;
                     @endphp
@@ -74,6 +78,26 @@
                     </div>
                 @endforeach
             </div>
+            @endif
+
+            @if($potonganKomps->isNotEmpty())
+            <div style="margin: 24px 0 12px; font-weight: 700; font-size: 0.95rem; color: #991b1b; display:flex; align-items:center; gap:8px;">
+                <span>🔴</span> Komponen Potongan Rutin Karyawan
+            </div>
+            <div class="form-row form-row-2">
+                @foreach($potonganKomps as $komp)
+                    @php
+                        $nomVal = isset($details[$komp->ID_komponen_gaji]) ? $details[$komp->ID_komponen_gaji]->nominal_gaji : 0;
+                    @endphp
+                    <div class="form-group">
+                        <label class="form-label">{{ $komp->nama_gaji }} (Rp)</label>
+                        <div class="input-wrapper">
+                            <input type="number" step="any" name="komponen[{{ $komp->ID_komponen_gaji }}]" class="form-input" value="{{ old('komponen.'.$komp->ID_komponen_gaji, $nomVal) }}" placeholder="0" style="color:#b91c1c;">
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+            @endif
 
             <div class="form-actions">
                 <a href="{{ route('gaji-karyawan.index') }}" class="btn-form-cancel">Batal</a>

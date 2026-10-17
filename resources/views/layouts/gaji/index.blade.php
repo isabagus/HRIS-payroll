@@ -71,6 +71,7 @@
                     <tr>
                         <th width="60">No</th>
                         <th>Nama Komponen Gaji</th>
+                        <th width="140">Kategori</th>
                         <th width="80">Dibuat</th>
                         <th width="130" class="text-center">Aksi</th>
                     </tr>
@@ -90,6 +91,19 @@
                                 </div>
                                 <span class="data-name">{{ $komponen->nama_gaji }}</span>
                             </div>
+                        </td>
+                        <td>
+                            @if(($komponen->jenis ?? 'pendapatan') === 'potongan')
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                                    Potongan
+                                </span>
+                            @else
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                    Pendapatan
+                                </span>
+                            @endif
                         </td>
                         <td class="text-muted text-sm">{{ $komponen->created_at->format('d/m/Y') }}</td>
                         <td class="text-center">

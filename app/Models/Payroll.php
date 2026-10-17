@@ -55,6 +55,25 @@ class Payroll extends Model
         return abs($val);
     }
 
+    // Dynamic accessor reading BPJS company burden from detail_payrolls info
+    public function getBpjsPerusahaanAttribute()
+    {
+        if (isset($this->attributes['bpjs_perusahaan'])) {
+            return floatval($this->attributes['bpjs_perusahaan']);
+        }
+        $detail = $this->details->where('jenis', 'bpjs')->first(function ($d) {
+            return str_contains(strtolower($d->keterangan ?? ''), 'perusahaan');
+        });
+        if ($detail) {
+            preg_match('/Rp\s*([\d\.,]+)/i', $detail->keterangan, $matches);
+            if (!empty($matches[1])) {
+                $clean = str_replace(['.', ','], '', $matches[1]);
+                return floatval($clean);
+            }
+        }
+        return 0;
+    }
+
     /** Tarif gaji pokok per jam (kolom gaji_pokok di DB). */
     public function getTarifPerJamAttribute(): float
     {

@@ -31,15 +31,21 @@ class KomponenGajiController extends Controller
         if ($request->has('items') && is_array($request->items)) {
             $request->validate([
                 'items.*.nama_gaji' => 'required|string|max:100',
+                'items.*.jenis'     => 'required|in:pendapatan,potongan',
             ], [
                 'items.*.nama_gaji.required' => 'Nama komponen gaji wajib diisi pada setiap baris.',
+                'items.*.jenis.required'     => 'Jenis kategori wajib dipilih pada setiap baris.',
             ]);
 
             $inserted = 0;
             foreach ($request->items as $item) {
-                $nama = trim($item['nama_gaji'] ?? '');
+                $nama  = trim($item['nama_gaji'] ?? '');
+                $jenis = $item['jenis'] ?? 'pendapatan';
                 if (!empty($nama)) {
-                    KomponenGaji::firstOrCreate(['nama_gaji' => $nama]);
+                    KomponenGaji::firstOrCreate(
+                        ['nama_gaji' => $nama],
+                        ['jenis' => $jenis]
+                    );
                     $inserted++;
                 }
             }
@@ -51,13 +57,15 @@ class KomponenGajiController extends Controller
         // Single item fallback
         $request->validate([
             'nama_gaji' => 'required|string|max:100|unique:komponen_gajis,nama_gaji',
+            'jenis'     => 'required|in:pendapatan,potongan',
         ], [
             'nama_gaji.required' => 'Nama komponen gaji wajib diisi.',
             'nama_gaji.unique'   => 'Nama komponen gaji sudah terdaftar.',
             'nama_gaji.max'      => 'Nama komponen gaji maksimal 100 karakter.',
+            'jenis.required'     => 'Jenis komponen gaji wajib dipilih.',
         ]);
 
-        KomponenGaji::create($request->only('nama_gaji'));
+        KomponenGaji::create($request->only('nama_gaji', 'jenis'));
 
         return redirect()->route('gaji.index')
             ->with('success', 'Komponen gaji berhasil ditambahkan.');
@@ -72,13 +80,15 @@ class KomponenGajiController extends Controller
     {
         $request->validate([
             'nama_gaji' => 'required|string|max:100|unique:komponen_gajis,nama_gaji,' . $gaji->ID_komponen_gaji . ',ID_komponen_gaji',
+            'jenis'     => 'required|in:pendapatan,potongan',
         ], [
             'nama_gaji.required' => 'Nama komponen gaji wajib diisi.',
             'nama_gaji.unique'   => 'Nama komponen gaji sudah terdaftar.',
             'nama_gaji.max'      => 'Nama komponen gaji maksimal 100 karakter.',
+            'jenis.required'     => 'Jenis komponen gaji wajib dipilih.',
         ]);
 
-        $gaji->update($request->only('nama_gaji'));
+        $gaji->update($request->only('nama_gaji', 'jenis'));
 
         return redirect()->route('gaji.index')
             ->with('success', 'Komponen gaji berhasil diperbarui.');

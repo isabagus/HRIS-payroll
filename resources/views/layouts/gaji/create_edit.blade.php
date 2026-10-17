@@ -57,6 +57,16 @@
                 </div>
             </div>
 
+            <div class="form-group">
+                <label for="jenis" class="form-label">Kategori Komponen <span class="required-mark">*</span></label>
+                <div class="input-wrapper">
+                    <select name="jenis" id="jenis" class="form-input" required>
+                        <option value="pendapatan" {{ old('jenis', $komponen->jenis ?? 'pendapatan') === 'pendapatan' ? 'selected' : '' }}>🟢 Pendapatan (Penambah Gaji / Tunjangan)</option>
+                        <option value="potongan" {{ old('jenis', $komponen->jenis ?? '') === 'potongan' ? 'selected' : '' }}>🔴 Potongan (Pengurang Gaji / Iuran)</option>
+                    </select>
+                </div>
+            </div>
+
             <div class="form-actions">
                 <a href="{{ route('gaji.index') }}" class="btn-form-cancel">Batal</a>
                 <button type="submit" class="btn-form-submit">Simpan Perubahan</button>
@@ -92,10 +102,21 @@
                             </svg>
                         </button>
                     </div>
-                    <div class="form-group" style="margin-bottom:0;">
-                        <label class="form-label">Nama Komponen Gaji <span class="required-mark">*</span></label>
-                        <div class="input-wrapper">
-                            <input type="text" name="items[0][nama_gaji]" class="form-input" placeholder="Contoh: Gaji Pokok, Tunjangan Makan, Bonus Kinerja..." required>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label class="form-label">Nama Komponen Gaji <span class="required-mark">*</span></label>
+                            <div class="input-wrapper">
+                                <input type="text" name="items[0][nama_gaji]" class="form-input" placeholder="Contoh: Gaji Pokok, Tunjangan Makan, BPJS..." required>
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label class="form-label">Kategori <span class="required-mark">*</span></label>
+                            <div class="input-wrapper">
+                                <select name="items[0][jenis]" class="form-input" required>
+                                    <option value="pendapatan">🟢 Pendapatan (Penambah)</option>
+                                    <option value="potongan">🔴 Potongan (Pengurang)</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -146,10 +167,21 @@ document.getElementById('btn-add-gaji-row')?.addEventListener('click', function(
                 </svg>
             </button>
         </div>
-        <div class="form-group" style="margin-bottom:0;">
-            <label class="form-label">Nama Komponen Gaji <span class="required-mark">*</span></label>
-            <div class="input-wrapper">
-                <input type="text" name="items[${itemIndex}][nama_gaji]" class="form-input" placeholder="Nama komponen gaji" required>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label">Nama Komponen Gaji <span class="required-mark">*</span></label>
+                <div class="input-wrapper">
+                    <input type="text" name="items[${itemIndex}][nama_gaji]" class="form-input" placeholder="Nama komponen gaji" required>
+                </div>
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label">Kategori <span class="required-mark">*</span></label>
+                <div class="input-wrapper">
+                    <select name="items[${itemIndex}][jenis]" class="form-input" required>
+                        <option value="pendapatan">🟢 Pendapatan (Penambah)</option>
+                        <option value="potongan">🔴 Potongan (Pengurang)</option>
+                    </select>
+                </div>
             </div>
         </div>
     `;

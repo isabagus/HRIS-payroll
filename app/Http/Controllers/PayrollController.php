@@ -112,24 +112,39 @@ class PayrollController extends Controller
             $mingguanRate         = 0;
             $kerajinanRate        = 0;
             $bulananRate          = 0;
-            $tunjanganJabatanRate = 0;
+            $tunjanganJabatanRate   = 0;
+            $potonganBpjsRate       = 0;
+            $bpjsPerusahaanRate     = 96000;
+            $totalPotonganRutinLain = 0;
 
             foreach ($details as $det) {
-                $n   = strtolower($det->komponenGaji->nama_gaji ?? '');
-                $val = floatval($det->nominal_gaji);
+                $komp  = $det->komponenGaji;
+                $n     = strtolower($komp->nama_gaji ?? '');
+                $val   = floatval($det->nominal_gaji);
+                $jenis = $komp->jenis ?? 'pendapatan';
 
-                if (str_contains($n, 'pokok')) {
-                    $gajiPokokRate = $val;
-                } elseif (str_contains($n, 'makan')) {
-                    $uangMakanRate = $val;
-                } elseif (str_contains($n, 'mingguan')) {
-                    $mingguanRate = $val;
-                } elseif (str_contains($n, 'kerajinan')) {
-                    $kerajinanRate = $val;
-                } elseif (str_contains($n, 'bulanan')) {
-                    $bulananRate = $val;
-                } elseif (str_contains($n, 'jabatan')) {
-                    $tunjanganJabatanRate = $val;
+                if ($jenis === 'potongan') {
+                    if (str_contains($n, 'perusahaan') || str_contains($n, 'kantor')) {
+                        $bpjsPerusahaanRate = $val;
+                    } elseif (str_contains($n, 'bpjs')) {
+                        $potonganBpjsRate = $val;
+                    } else {
+                        $totalPotonganRutinLain += $val;
+                    }
+                } else {
+                    if (str_contains($n, 'pokok')) {
+                        $gajiPokokRate = $val;
+                    } elseif (str_contains($n, 'makan')) {
+                        $uangMakanRate = $val;
+                    } elseif (str_contains($n, 'mingguan')) {
+                        $mingguanRate = $val;
+                    } elseif (str_contains($n, 'kerajinan')) {
+                        $kerajinanRate = $val;
+                    } elseif (str_contains($n, 'bulanan')) {
+                        $bulananRate = $val;
+                    } elseif (str_contains($n, 'jabatan')) {
+                        $tunjanganJabatanRate = $val;
+                    }
                 }
             }
 
@@ -253,8 +268,10 @@ class PayrollController extends Controller
                 }
             }
 
-            $potonganBpjs = 40000; // Flat BPJS
-            $potonganLain = 0;     // Optional custom penalty deduction
+            // BPJS & Potongan Rutin diambil dari Setup Gaji Karyawan masing-masing
+            $potonganBpjs    = $potonganBpjsRate;
+            $bpjsPerusahaan  = $bpjsPerusahaanRate;
+            $potonganLain    = $totalPotonganRutinLain; // Jika ada potongan rutin selain BPJS (misal koperasi) otomatis terisi
 
             $totalPendapatan = $totalGajiPokokHarian + $totalUangMakan + $totalMingguan + $totalKerajinan + $totalBulanan + $totalTunjanganJabatan + $totalLemburan;
             $initialThp      = max(0, $totalPendapatan - ($potonganBpjs + $potonganLain));
@@ -281,7 +298,7 @@ class PayrollController extends Controller
                 'sisa_kasbon_aktif'       => $sisaKasbonAktif,
                 'potongan_kasbon'         => 0,
                 'potongan_bpjs'           => $potonganBpjs,
-                'bpjs_perusahaan'         => 96000,
+                'bpjs_perusahaan'         => $bpjsPerusahaan,
                 'potongan_lain'           => $potonganLain,
                 'total_pendapatan'        => $totalPendapatan,
                 'gaji_bersih'             => $initialThp,
@@ -359,8 +376,8 @@ class PayrollController extends Controller
                 $totalGajiPokokHarian = floatval($item['total_gaji_pokok_harian'] ?? 0);
                 $totalLemburan        = floatval($item['total_lemburan'] ?? 0);
                 $potonganKasbon       = floatval($item['potongan_kasbon'] ?? 0);
-                $potonganBpjs         = floatval($item['potongan_bpjs'] ?? 40000);
-                $bpjsPerusahaan       = floatval($item['bpjs_perusahaan'] ?? 40000);
+                $potonganBpjs         = floatval($item['potongan_bpjs'] ?? 0);
+                $bpjsPerusahaan       = floatval($item['bpjs_perusahaan'] ?? 0);
                 $potonganLain         = floatval($item['potongan_lain'] ?? 0);
 
                 $totalPendapatan = floatval($item['total_pendapatan'] ?? 0);
@@ -699,8 +716,8 @@ class PayrollController extends Controller
         $subtotalGajiSampaiLembur = $hasilHarian + $hasilUangMakan + $hasilMingguan + $hasilBulanan + $hasilKerajinan + $hasilTunjanganJabatan + $totalLemburSistem;
 
         // 4. BPJS
-        $bpjsKantor   = floatval($payroll->bpjs_perusahaan ?? 95000);
-        $bpjsKaryawan = floatval($payroll->potongan_bpjs ?? 40000);
+        $bpjsKantor   = floatval($payroll->bpjs_perusahaan ?? 0);
+        $bpjsKaryawan = floatval($payroll->potongan_bpjs ?? 0);
         $totalBpjs    = $bpjsKantor + $bpjsKaryawan;
 
         // 5. Kasbon

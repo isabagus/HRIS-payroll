@@ -238,7 +238,7 @@
                                        value="{{ $item['potongan_bpjs'] }}"
                                        data-idx="{{ $idx }}"
                                        oninput="recalculateReviewRow({{ $idx }})"
-                                       placeholder="40000"
+                                       placeholder="0"
                                        style="padding:6px 10px; font-weight:600; font-size:12px; color:var(--danger);">
                                 <div class="text-xs text-muted" style="margin-top:2px; font-size:9px;">
                                     Potong THP
@@ -251,8 +251,8 @@
                                        name="items[{{ $idx }}][bpjs_perusahaan]"
                                        id="bpjs-kantor-input-{{ $idx }}"
                                        class="form-input text-right"
-                                       value="{{ $item['bpjs_perusahaan'] ?? 40000 }}"
-                                       placeholder="40000"
+                                       value="{{ $item['bpjs_perusahaan'] ?? 0 }}"
+                                       placeholder="0"
                                        style="padding:6px 10px; font-weight:600; font-size:12px; color:#1e293b;">
                                 <div class="text-xs text-muted" style="margin-top:2px; font-size:9px;">
                                     Beban Perusahaan
@@ -300,7 +300,7 @@ function recalculateReviewRow(idx) {
 
     const pendapatan   = parseFloat(kasbonInput.getAttribute('data-pendapatan')) || 0;
     const sisaKasbon   = parseFloat(kasbonInput.getAttribute('data-sisa')) || 0;
-    const bpjsKaryawan = parseFloat(bpjsInput ? bpjsInput.value : 40000) || 0;
+    const bpjsKaryawan = parseFloat(bpjsInput && bpjsInput.value !== '' ? bpjsInput.value : 0) || 0;
     const kasbon       = parseFloat(kasbonInput.value) || 0;
     const lain         = parseFloat(lainInput ? lainInput.value : 0) || 0;
 

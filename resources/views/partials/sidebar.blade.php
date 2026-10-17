@@ -130,7 +130,7 @@
                                 <line x1="2" y1="10" x2="22" y2="10"/>
                             </svg>
                         </span>
-                        <span class="nav-text">Gaji Pokok</span>
+                        <span class="nav-text">Komponen Gaji</span>
                     </a>
                 </li>
                 @endif
