@@ -143,6 +143,7 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('absensi/{absensi}', [AbsensiController::class, 'destroy'])->name('absensi.destroy')->middleware('hak_akses:absensi,delete');
 
     // Kepegawaian - Lembur
+    Route::get('lembur/shift-info', [LemburController::class, 'getShiftInfo'])->name('lembur.shift-info')->middleware('hak_akses:lembur,read');
     Route::get('lembur/rate-karyawan/{id}', [LemburController::class, 'getKaryawanRate'])->name('lembur.rate-karyawan')->middleware('hak_akses:lembur,read');
     Route::get('lembur/approval', [LemburController::class, 'approvalIndex'])->name('lembur.approval')->middleware('hak_akses:lembur,update');
     Route::patch('lembur/{lembur}/approve', [LemburController::class, 'approve'])->name('lembur.approve')->middleware('hak_akses:lembur,update');

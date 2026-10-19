@@ -57,6 +57,27 @@
                 </div>
             </div>
 
+            <div class="form-group">
+                <label class="form-label">Tipe Jadwal Kerja & Kebijakan Shift <span class="required-mark">*</span></label>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:6px;">
+                    <label style="border:1.5px solid {{ old('tipe_jadwal', $divisi->tipe_jadwal) == 'shift' ? '#10b981' : '#e2e8f0' }}; background:{{ old('tipe_jadwal', $divisi->tipe_jadwal) == 'shift' ? '#ecfdf5' : '#ffffff' }}; padding:14px; border-radius:10px; cursor:pointer; display:flex; align-items:flex-start; gap:10px;">
+                        <input type="radio" name="tipe_jadwal" value="shift" {{ old('tipe_jadwal', $divisi->tipe_jadwal) == 'shift' ? 'checked' : '' }} style="margin-top:3px;">
+                        <div>
+                            <span style="font-weight:700; font-size:13px; color:#065f46;">🔄 Produksi (Multi-Shift Bergilir)</span>
+                            <span class="text-xs text-muted" style="display:block; margin-top:2px;">Mendukung 2 shift kerja (Shift Pagi & Shift Siang). Sistem mendeteksi shift otomatis saat karyawan absen.</span>
+                        </div>
+                    </label>
+
+                    <label style="border:1.5px solid {{ old('tipe_jadwal', $divisi->tipe_jadwal ?? 'staff') == 'staff' ? '#3b82f6' : '#e2e8f0' }}; background:{{ old('tipe_jadwal', $divisi->tipe_jadwal ?? 'staff') == 'staff' ? '#eff6ff' : '#ffffff' }}; padding:14px; border-radius:10px; cursor:pointer; display:flex; align-items:flex-start; gap:10px;">
+                        <input type="radio" name="tipe_jadwal" value="staff" {{ old('tipe_jadwal', $divisi->tipe_jadwal ?? 'staff') == 'staff' ? 'checked' : '' }} style="margin-top:3px;">
+                        <div>
+                            <span style="font-weight:700; font-size:13px; color:#1e40af;">🏢 Staff Kantor (Jam Normal)</span>
+                            <span class="text-xs text-muted" style="display:block; margin-top:2px;">Terkunci pada Shift 1 Normal (08:00 - 17:00). Datang siang tetap dicatat telat.</span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
             <div class="form-actions">
                 <a href="{{ route('divisi.index') }}" class="btn-form-cancel">Batal</a>
                 <button type="submit" class="btn-form-submit">Simpan Perubahan</button>
@@ -92,10 +113,21 @@
                             </svg>
                         </button>
                     </div>
-                    <div class="form-group" style="margin-bottom:0;">
-                        <label class="form-label">Nama Divisi <span class="required-mark">*</span></label>
-                        <div class="input-wrapper">
-                            <input type="text" name="items[0][nama_divisi]" class="form-input" placeholder="Contoh: HRD, IT, Marketing, Operasional..." required>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label class="form-label">Nama Divisi <span class="required-mark">*</span></label>
+                            <div class="input-wrapper">
+                                <input type="text" name="items[0][nama_divisi]" class="form-input" placeholder="Contoh: Produksi, Gudang, HRD, IT..." required>
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label class="form-label">Kebijakan Shift Kerja <span class="required-mark">*</span></label>
+                            <div class="input-wrapper">
+                                <select name="items[0][tipe_jadwal]" class="form-select-box" style="height:42px;">
+                                    <option value="staff">🏢 Staff Kantor (Jam Normal 08:00 - 17:00)</option>
+                                    <option value="shift">🔄 Produksi (Multi-Shift Bergilir)</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -146,10 +178,21 @@ document.getElementById('btn-add-divisi-row')?.addEventListener('click', functio
                 </svg>
             </button>
         </div>
-        <div class="form-group" style="margin-bottom:0;">
-            <label class="form-label">Nama Divisi <span class="required-mark">*</span></label>
-            <div class="input-wrapper">
-                <input type="text" name="items[${itemIndex}][nama_divisi]" class="form-input" placeholder="Nama divisi" required>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label">Nama Divisi <span class="required-mark">*</span></label>
+                <div class="input-wrapper">
+                    <input type="text" name="items[${itemIndex}][nama_divisi]" class="form-input" placeholder="Nama divisi" required>
+                </div>
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label">Kebijakan Shift Kerja <span class="required-mark">*</span></label>
+                <div class="input-wrapper">
+                    <select name="items[${itemIndex}][tipe_jadwal]" class="form-select-box" style="height:42px;">
+                        <option value="staff">🏢 Staff Kantor (Jam Normal 08:00 - 17:00)</option>
+                        <option value="shift">🔄 Produksi (Multi-Shift Bergilir)</option>
+                    </select>
+                </div>
             </div>
         </div>
     `;

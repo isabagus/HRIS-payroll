@@ -86,6 +86,9 @@
                 <span><strong>Jam Kerja Hari Libur (08:00 - 17:00 / 8 Pagi - 5 Sore):</strong> Uang lembur dihitung otomatis dari <strong>(Gaji Pokok + Uang Makan) × 2</strong>.</span>
             </div>
 
+            {{-- Info Banner Shift & Proteksi Anti-Double Dipping --}}
+            <div class="info-banner-shift mb-4 p-3 rounded-xl border text-xs" style="display: none;"></div>
+
             <div class="form-row form-row-2">
                 <div class="form-group mb-4">
                     <label class="form-label required">Tanggal Lembur</label>
@@ -223,6 +226,9 @@
                         <span><strong>Jam Kerja Hari Libur (08:00 - 17:00 / 8 Pagi - 5 Sore):</strong> Uang lembur dihitung otomatis dari <strong>(Gaji Pokok + Uang Makan) × 2</strong>.</span>
                     </div>
 
+                    {{-- Info Banner Shift & Proteksi Anti-Double Dipping --}}
+                    <div class="info-banner-shift mb-4 p-3 rounded-xl border text-xs" style="display: none;"></div>
+
                     <div class="form-row form-row-2">
                         <div class="form-group mb-4">
                             <label class="form-label required">Tanggal Lembur</label>
@@ -340,6 +346,8 @@ function updateRowMode(card) {
 
     if (isLibur) {
         if (infoBanner) infoBanner.style.display = 'flex';
+        const bannerShift = card.querySelector('.info-banner-shift');
+        if (bannerShift) bannerShift.style.display = 'none';
         harianGroup.forEach(el => el.style.display = 'none');
         if (totalInput) totalInput.removeAttribute('readonly');
 
@@ -355,11 +363,89 @@ function updateRowMode(card) {
         if (infoBanner) infoBanner.style.display = 'none';
         harianGroup.forEach(el => el.style.display = 'block');
         if (totalInput) totalInput.setAttribute('readonly', 'readonly');
-        if (startInput && startInput.value === '08:00') startInput.value = '17:00';
-        if (endInput && endInput.value === '17:00') endInput.value = '20:00';
-        calculateDuration(card);
-        calculateRowTotal(card);
+        
+        // Cek shift dan proteksi keterlambatan (Anti-Double Dipping)
+        fetchShiftInfo(card);
     }
+}
+
+function fetchShiftInfo(card) {
+    const empSelect   = card.querySelector('.field-select-karyawan');
+    const dateInput   = card.querySelector('input[name="tanggal"], input[name$="[tanggal]"]');
+    const bannerShift = card.querySelector('.info-banner-shift');
+    const jenisSelect = card.querySelector('.field-jenis-lembur');
+    const startInput  = card.querySelector('.field-jam-mulai');
+    const endInput    = card.querySelector('.field-jam-selesai');
+
+    if (!empSelect || !dateInput || !bannerShift) return;
+
+    const isLibur = (jenisSelect?.value === 'libur') || (jenisSelect?.options[jenisSelect?.selectedIndex]?.text || '').toLowerCase().includes('libur');
+    if (isLibur) {
+        bannerShift.style.display = 'none';
+        return;
+    }
+
+    const empId = empSelect.value;
+    const tgl   = dateInput.value;
+
+    if (!empId || !tgl) {
+        bannerShift.style.display = 'none';
+        return;
+    }
+
+    fetch(`/lembur/shift-info?karyawan_id=${empId}&tanggal=${tgl}`)
+        .then(res => res.json())
+        .then(data => {
+            if (!data.success) {
+                bannerShift.style.display = 'none';
+                return;
+            }
+
+            bannerShift.style.display = 'block';
+
+            if (data.is_telat && data.catatan_proteksi) {
+                bannerShift.className = 'info-banner-shift mb-4 p-3 rounded-xl border text-xs bg-amber-50 border-amber-300 text-amber-900';
+                bannerShift.innerHTML = `
+                    <div style="display:flex; align-items:flex-start; gap:8px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-amber-600" style="flex-shrink:0; margin-top:2px;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        <div>
+                            <strong>Proteksi Anti-Double Dipping:</strong> ${data.catatan_proteksi}
+                            <div style="margin-top:4px; font-weight:600; color:#b45309;">
+                                Terdeteksi: ${data.nama_shift} &bull; Jam Mulai Lembur Sah: <u>${data.jam_mulai_lembur_sah}</u>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                bannerShift.className = 'info-banner-shift mb-4 p-3 rounded-xl border text-xs bg-blue-50 border-blue-200 text-blue-900';
+                bannerShift.innerHTML = `
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-blue-600" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        <div>
+                            <strong>${data.nama_shift}:</strong> Selesai shift normal pukul <strong>${data.jam_selesai_shift}</strong>. Lembur sah dimulai setelah jam <strong>${data.jam_mulai_lembur_sah}</strong>.
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Atur otomatis jam mulai lembur ke jam sah
+            if (startInput && data.jam_mulai_lembur_sah) {
+                startInput.value = data.jam_mulai_lembur_sah;
+
+                // Set jam selesai default 3 jam setelah jam mulai
+                const [sh, sm] = data.jam_mulai_lembur_sah.split(':').map(Number);
+                const endH = (sh + 3) % 24;
+                const endHStr = String(endH).padStart(2, '0') + ':' + String(sm).padStart(2, '0');
+                if (endInput) endInput.value = endHStr;
+
+                calculateDuration(card);
+                calculateRowTotal(card);
+            }
+        })
+        .catch(err => {
+            console.error('Error fetch shift info:', err);
+            bannerShift.style.display = 'none';
+        });
 }
 
 function fetchHolidayRate(empId, card) {
@@ -440,6 +526,8 @@ document.addEventListener('change', function(e) {
 
     if (e.target.matches('.field-jenis-lembur')) {
         updateRowMode(card);
+    } else if (e.target.matches('input[name="tanggal"], input[name$="[tanggal]"]')) {
+        fetchShiftInfo(card);
     } else if (e.target.matches('.field-jam-mulai, .field-jam-selesai')) {
         calculateDuration(card);
         calculateRowTotal(card);
@@ -503,6 +591,8 @@ document.getElementById('btn-add-lembur-row')?.addEventListener('click', functio
             </svg>
             <span><strong>Jam Kerja Hari Libur (08:00 - 17:00 / 8 Pagi - 5 Sore):</strong> Uang lembur dihitung otomatis dari <strong>(Gaji Pokok + Uang Makan) × 2</strong>.</span>
         </div>
+
+        <div class="info-banner-shift mb-4 p-3 rounded-xl border text-xs" style="display: none;"></div>
 
         <div class="form-row form-row-2">
             <div class="form-group mb-4">

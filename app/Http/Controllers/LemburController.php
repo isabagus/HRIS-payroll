@@ -135,6 +135,26 @@ class LemburController extends Controller
         return response()->json($this->getEmployeeRate($id));
     }
 
+    /**
+     * Endpoint API untuk mengecek shift & batas jam mulai lembur yang sah
+     * dengan proteksi Anti-Double Dipping.
+     */
+    public function getShiftInfo(Request $request)
+    {
+        $karyawanId = $request->get('karyawan_id');
+        $tanggal    = $request->get('tanggal');
+
+        if (!$karyawanId || !$tanggal) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Parameter karyawan_id dan tanggal wajib diisi.',
+            ], 400);
+        }
+
+        $info = \App\Services\AbsensiService::getInfoLemburHari($karyawanId, $tanggal);
+        return response()->json(array_merge(['success' => true], $info));
+    }
+
     // ──────────────────────────────────────────────────────────────────────────
     // INDEX & APPROVAL INDEX
     // ──────────────────────────────────────────────────────────────────────────
@@ -484,24 +504,47 @@ class LemburController extends Controller
             // Durasi diambil dari input manual (durasi_jam)
             $durasi     = floatval($data['durasi_jam'] ?? 0);
 
+            // Cek info shift dan proteksi Anti-Double Dipping berdasarkan absensi aktual
+            $shiftInfo = null;
+            if ($karyawanId && $tanggal) {
+                $shiftInfo = \App\Services\AbsensiService::getInfoLemburHari($karyawanId, $tanggal);
+            }
+
+            if ($shiftInfo && !empty($shiftInfo['jam_mulai_lembur_sah'])) {
+                if (empty($jamMulai)) {
+                    $jamMulai = $shiftInfo['jam_mulai_lembur_sah'];
+                }
+            }
+
             if ($jamMulai && $jamSelesai) {
                 try {
-                    $t1 = Carbon::parse($jamMulai);
-                    $t2 = Carbon::parse($jamSelesai);
+                    $baseDate = '2026-01-01 ';
+                    $t1 = Carbon::createFromFormat('Y-m-d H:i', $baseDate . substr($jamMulai, 0, 5));
+                    $t2 = Carbon::createFromFormat('Y-m-d H:i', $baseDate . substr($jamSelesai, 0, 5));
                     // Tambah hari jika jam selesai < jam mulai (crossday)
                     if ($t2->lt($t1)) $t2->addDay();
-                    $diffMenit = (int) $t2->diffInMinutes($t1); // absolute, selalu positif
 
-                    if ($diffMenit <= 0) {
-                        Log::warning("Lembur: durasi 0 atau negatif karyawan {$karyawanId}", [
-                            'jam_mulai'   => $jamMulai,
-                            'jam_selesai' => $jamSelesai,
-                        ]);
-                        // Pertahankan nilai durasi_jam dari input jika ada
-                        if ($durasi <= 0) $durasi = 0;
+                    // PROTEKSI ANTI-DOUBLE DIPPING:
+                    // Jika karyawan telat dan memiliki jam tebusan untuk melunasi jam pokok,
+                    // jam lembur yang sah baru boleh dihitung setelah jam batas tebusan selesai!
+                    if ($shiftInfo && !empty($shiftInfo['jam_mulai_lembur_sah'])) {
+                        $tSah = Carbon::createFromFormat('Y-m-d H:i', $baseDate . substr($shiftInfo['jam_mulai_lembur_sah'], 0, 5));
+                        // Tangani jika jam sah melewati tengah malam (cross-day) dibanding jam mulai shift
+                        if ($tSah->lt($t1) && $t2->gt($t1)) {
+                            $tSah->addDay();
+                        }
+
+                        if ($t1->lt($tSah)) {
+                            Log::info("Proteksi Anti-Double Dipping Aktif (Karyawan ID: {$karyawanId}): Jam mulai lembur diajukan ({$jamMulai}) disesuaikan ke ({$shiftInfo['jam_mulai_lembur_sah']}) karena waktu tersebut digunakan untuk tebusan gaji pokok.");
+                            $t1 = $tSah->copy();
+                        }
+                    }
+
+                    if ($t2->lte($t1)) {
+                        $durasi = 0.0;
                     } else {
-                        // Jika jam mulai & selesai diisi, hitung dari selisihnya
-                        $durasi = round($diffMenit / 60, 1);
+                        $diffMenit = abs((int) $t1->diffInMinutes($t2));
+                        $durasi    = round($diffMenit / 60, 1);
                     }
                 } catch (\Exception $e) {
                     Log::warning("Lembur: gagal parse jam harian karyawan {$karyawanId}", ['jam_mulai' => $jamMulai, 'jam_selesai' => $jamSelesai]);

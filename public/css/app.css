@@ -363,7 +363,7 @@ input, textarea, select { font-family: inherit; }
 
 .topbar-user-btn { display: flex; align-items: center; gap: 8px; padding: 4px 10px 4px 4px; border-radius: 10px; transition: var(--transition-fast); }
 .topbar-user-btn:hover { background: #f1f5f9; }
-.topbar-avatar { width: 34px; height: 34px; border-radius: 8px; background: linear-gradient(135deg, #4f46e5, #7c3aed); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.topbar-avatar { width: 34px; height: 34px; border-radius: 8px; background: #2563eb; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .topbar-avatar span { font-size: 12px; font-weight: 700; color: white; }
 .topbar-user-info { text-align: left; }
 .topbar-username { display: block; font-size: 13px; font-weight: 600; color: var(--text-primary); }
@@ -373,7 +373,7 @@ input, textarea, select { font-family: inherit; }
 
 .user-panel { width: 260px; }
 .user-panel-header { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--border-color); }
-.user-panel-avatar { width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #4f46e5, #7c3aed); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.user-panel-avatar { width: 40px; height: 40px; border-radius: 10px; background: #2563eb; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .user-panel-avatar span { font-size: 14px; font-weight: 700; color: white; }
 .user-panel-info { min-width: 0; }
 .user-panel-name { font-size: 13px; font-weight: 700; color: var(--text-primary); }

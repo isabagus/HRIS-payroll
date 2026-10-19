@@ -167,7 +167,7 @@ class PayrollController extends Controller
             $daysPresentCount   = 0;
 
             foreach ($absensis as $a) {
-                $calc = \App\Services\AbsensiService::hitungJamKerja($karyawan, $a->jam_masuk, $a->jam_pulang, $a->status_absensi);
+                $calc = \App\Services\AbsensiService::hitungJamKerja($karyawan, $a->jam_masuk, $a->jam_pulang, $a->status_absensi, $a->jam_kerja_masuk);
 
                 $jamKerjaHari        = $calc['total_jam_kerja'];
                 $totalJamKerjaBulan += $jamKerjaHari;
@@ -208,7 +208,7 @@ class PayrollController extends Controller
                 $weekSetengahHariCount = 0;
 
                 foreach ($weekAbs as $wa) {
-                    $wCalc = \App\Services\AbsensiService::hitungJamKerja($karyawan, $wa->jam_masuk, $wa->jam_pulang, $wa->status_absensi);
+                    $wCalc = \App\Services\AbsensiService::hitungJamKerja($karyawan, $wa->jam_masuk, $wa->jam_pulang, $wa->status_absensi, $wa->jam_kerja_masuk);
                     $wSt   = $wCalc['status_absensi'];
 
                     if ($wSt === 'Hadir') {
@@ -618,7 +618,7 @@ class PayrollController extends Controller
         // Hitung ulang dari absensi jika kolom DB kosong (fallback untuk payroll lama)
         if ($totalJamKerja <= 0) {
             foreach ($absensis as $a) {
-                $calc = \App\Services\AbsensiService::hitungJamKerja($payroll->karyawan, $a->jam_masuk, $a->jam_pulang, $a->status_absensi);
+                $calc = \App\Services\AbsensiService::hitungJamKerja($payroll->karyawan, $a->jam_masuk, $a->jam_pulang, $a->status_absensi, $a->jam_kerja_masuk);
                 $totalJamKerja += $calc['total_jam_kerja'];
             }
         }
@@ -646,7 +646,7 @@ class PayrollController extends Controller
             $weekSetengahHariCount = 0;
 
             foreach ($weekAbs as $wa) {
-                $wCalc = \App\Services\AbsensiService::hitungJamKerja($payroll->karyawan, $wa->jam_masuk, $wa->jam_pulang, $wa->status_absensi);
+                $wCalc = \App\Services\AbsensiService::hitungJamKerja($payroll->karyawan, $wa->jam_masuk, $wa->jam_pulang, $wa->status_absensi, $wa->jam_kerja_masuk);
                 $wSt   = $wCalc['status_absensi'];
 
                 if ($wSt === 'Hadir') {

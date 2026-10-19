@@ -73,6 +73,8 @@
                     <tr>
                         <th width="60">No</th>
                         <th>Nama Jabatan</th>
+                        <th>Divisi Terkait</th>
+                        <th>Kebijakan Shift</th>
                         <th width="80">Dibuat</th>
                         <th width="130" class="text-center">Aksi</th>
                     </tr>
@@ -92,6 +94,28 @@
                                 </div>
                                 <span class="data-name">{{ $jabatan->nama_jabatan }}</span>
                             </div>
+                        </td>
+                        <td>
+                            @if($jabatan->divisi)
+                                <span class="badge badge-gray" style="font-size: 13px; font-weight: 500;">
+                                    {{ $jabatan->divisi->nama_divisi }}
+                                </span>
+                            @else
+                                <span class="text-muted text-xs italic">- Belum dipilih -</span>
+                            @endif
+                        </td>
+                        <td>
+                            @if($jabatan->isShift())
+                                <span class="badge badge-purple" style="font-size: 12px; font-weight: 600;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline-block; vertical-align:middle; margin-right:3px;"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                                    2 Shift Bergilir
+                                </span>
+                            @else
+                                <span class="badge badge-blue" style="font-size: 12px; font-weight: 600;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline-block; vertical-align:middle; margin-right:3px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                    Staff (Normal)
+                                </span>
+                            @endif
                         </td>
                         <td class="text-muted text-sm">{{ $jabatan->created_at->format('d/m/Y') }}</td>
                         <td class="text-center">
@@ -121,7 +145,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="4">
+                        <td colspan="6">
                             <div class="empty-state">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3">
                                     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>

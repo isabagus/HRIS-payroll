@@ -30,7 +30,8 @@ class DivisiController extends Controller
         // Support dynamic multi-row input
         if ($request->has('items') && is_array($request->items)) {
             $request->validate([
-                'items.*.nama_divisi' => 'required|string|max:100',
+                'items.*.nama_divisi'  => 'required|string|max:100',
+                'items.*.tipe_jadwal'  => 'nullable|in:staff,shift',
             ], [
                 'items.*.nama_divisi.required' => 'Nama divisi wajib diisi pada setiap baris.',
             ]);
@@ -39,7 +40,11 @@ class DivisiController extends Controller
             foreach ($request->items as $item) {
                 $nama = trim($item['nama_divisi'] ?? '');
                 if (!empty($nama)) {
-                    Divisi::firstOrCreate(['nama_divisi' => $nama]);
+                    $tipe = $item['tipe_jadwal'] ?? 'staff';
+                    Divisi::create([
+                        'nama_divisi' => $nama,
+                        'tipe_jadwal' => $tipe,
+                    ]);
                     $inserted++;
                 }
             }
@@ -51,13 +56,17 @@ class DivisiController extends Controller
         // Single item fallback
         $request->validate([
             'nama_divisi' => 'required|string|max:100|unique:divisis,nama_divisi',
+            'tipe_jadwal' => 'nullable|in:staff,shift',
         ], [
             'nama_divisi.required' => 'Nama divisi wajib diisi.',
             'nama_divisi.unique'   => 'Nama divisi sudah terdaftar.',
             'nama_divisi.max'      => 'Nama divisi maksimal 100 karakter.',
         ]);
 
-        Divisi::create($request->only('nama_divisi'));
+        Divisi::create([
+            'nama_divisi' => $request->nama_divisi,
+            'tipe_jadwal' => $request->input('tipe_jadwal', 'staff'),
+        ]);
 
         return redirect()->route('divisi.index')
             ->with('success', 'Divisi berhasil ditambahkan.');
@@ -72,13 +81,17 @@ class DivisiController extends Controller
     {
         $request->validate([
             'nama_divisi' => 'required|string|max:100|unique:divisis,nama_divisi,' . $divisi->ID_divisi . ',ID_divisi',
+            'tipe_jadwal' => 'nullable|in:staff,shift',
         ], [
             'nama_divisi.required' => 'Nama divisi wajib diisi.',
             'nama_divisi.unique'   => 'Nama divisi sudah terdaftar.',
             'nama_divisi.max'      => 'Nama divisi maksimal 100 karakter.',
         ]);
 
-        $divisi->update($request->only('nama_divisi'));
+        $divisi->update([
+            'nama_divisi' => $request->nama_divisi,
+            'tipe_jadwal' => $request->input('tipe_jadwal', 'staff'),
+        ]);
 
         return redirect()->route('divisi.index')
             ->with('success', 'Divisi berhasil diperbarui.');

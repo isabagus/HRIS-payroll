@@ -74,6 +74,7 @@
                     <tr>
                         <th width="60">No</th>
                         <th>Nama Divisi</th>
+                        <th width="220">Kebijakan Shift</th>
                         <th width="80">Dibuat</th>
                         <th width="130" class="text-center">Aksi</th>
                     </tr>
@@ -93,6 +94,17 @@
                                 </div>
                                 <span class="data-name">{{ $divisi->nama_divisi }}</span>
                             </div>
+                        </td>
+                        <td>
+                            @if($divisi->tipe_jadwal === 'shift')
+                                <span class="badge" style="background:#ecfdf5; color:#065f46; font-weight:600; font-size:11px; padding:4px 10px; border-radius:12px; border:1px solid #a7f3d0;">
+                                    🔄 Produksi (2 Shift Bergilir)
+                                </span>
+                            @else
+                                <span class="badge" style="background:#f1f5f9; color:#475569; font-weight:600; font-size:11px; padding:4px 10px; border-radius:12px;">
+                                    🏢 Staff Kantor (Normal)
+                                </span>
+                            @endif
                         </td>
                         <td class="text-muted text-sm">{{ $divisi->created_at->format('d/m/Y') }}</td>
                         <td class="text-center">

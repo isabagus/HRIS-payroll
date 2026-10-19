@@ -87,7 +87,7 @@ class AbsensiController extends Controller
             $countLibur    = 0;
 
             foreach ($monthlyAbsensi as $a) {
-                $calc = \App\Services\AbsensiService::hitungJamKerja($karyawan, $a->jam_masuk, $a->jam_pulang, $a->status_absensi);
+                $calc = \App\Services\AbsensiService::hitungJamKerja($karyawan, $a->jam_masuk, $a->jam_pulang, $a->status_absensi, $a->jam_kerja_masuk);
                 $totalJamBulan += $calc['total_jam_kerja'];
 
                 $st = $calc['status_absensi'];
@@ -167,7 +167,7 @@ class AbsensiController extends Controller
 
             if (isset($absensisRaw[$dateStr])) {
                 $record = $absensisRaw[$dateStr];
-                $calc   = \App\Services\AbsensiService::hitungJamKerja($karyawan, $record->jam_masuk, $record->jam_pulang, $record->status_absensi);
+                $calc   = \App\Services\AbsensiService::hitungJamKerja($karyawan, $record->jam_masuk, $record->jam_pulang, $record->status_absensi, $record->jam_kerja_masuk);
 
                 $totalJamBulanan += $calc['total_jam_kerja'];
 
