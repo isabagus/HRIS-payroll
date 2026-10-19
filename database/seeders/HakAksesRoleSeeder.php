@@ -27,6 +27,8 @@ class HakAksesRoleSeeder extends Seeder
             'lembur',
             'kasbon',
             'payroll',
+            'pengaturan_jam_kerja',
+            'reset_password',
             'user_management',
         ];
 

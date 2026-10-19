@@ -34,13 +34,13 @@
         @foreach($roles as $r)
             @php
                 $roleColor = match(strtolower($r->nama_role)) {
-                    'super admin' => 'bg-purple-600 border-purple-300 text-purple-700',
+                    'super admin' => 'bg-blue-700 border-blue-400 text-blue-700',
                     'manager'     => 'bg-blue-600 border-blue-300 text-blue-700',
                     'admin'       => 'bg-amber-500 border-amber-300 text-amber-700',
                     default       => 'bg-emerald-600 border-emerald-300 text-emerald-700',
                 };
                 $dotColor = match(strtolower($r->nama_role)) {
-                    'super admin' => '#9333ea',
+                    'super admin' => '#1d4ed8',
                     'manager'     => '#2563eb',
                     'admin'       => '#f59e0b',
                     default       => '#10b981',
@@ -61,13 +61,13 @@
     {{-- Active Role Indicator Banner --}}
     @php
         $activeColorHex = match(strtolower($selectedRole?->nama_role ?? '')) {
-            'super admin' => '#9333ea',
+            'super admin' => '#1d4ed8',
             'manager'     => '#2563eb',
             'admin'       => '#f59e0b',
             default       => '#10b981',
         };
         $activeBadgeBg = match(strtolower($selectedRole?->nama_role ?? '')) {
-            'super admin' => 'bg-purple-50 text-purple-900 border-purple-200',
+            'super admin' => 'bg-blue-50 text-blue-900 border-blue-200',
             'manager'     => 'bg-blue-50 text-blue-900 border-blue-200',
             'admin'       => 'bg-amber-50 text-amber-900 border-amber-200',
             default       => 'bg-emerald-50 text-emerald-900 border-emerald-200',
@@ -101,7 +101,7 @@
                 </div>
 
                 <div class="flex items-center gap-2">
-                    <button type="button" id="btn-select-all" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 px-3 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50">
+                    <button type="button" id="btn-select-all" class="text-xs font-semibold text-blue-600 hover:text-blue-800 px-3 py-1.5 rounded-lg border border-blue-200 bg-blue-50">
                         Centang Semua
                     </button>
                     <button type="button" id="btn-unselect-all" class="text-xs font-semibold text-slate-600 hover:text-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50">
@@ -139,7 +139,7 @@
                                     <input type="checkbox" 
                                            name="permissions[{{ $modulKey }}][can_create]" 
                                            value="1" 
-                                           class="perm-checkbox w-5 h-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                           class="perm-checkbox w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                                            {{ $perm['can_create'] ? 'checked' : '' }}>
                                 </label>
                             </td>
@@ -148,7 +148,7 @@
                                     <input type="checkbox" 
                                            name="permissions[{{ $modulKey }}][can_read]" 
                                            value="1" 
-                                           class="perm-checkbox w-5 h-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                           class="perm-checkbox w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                                            {{ $perm['can_read'] ? 'checked' : '' }}>
                                 </label>
                             </td>
@@ -157,7 +157,7 @@
                                     <input type="checkbox" 
                                            name="permissions[{{ $modulKey }}][can_update]" 
                                            value="1" 
-                                           class="perm-checkbox w-5 h-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                           class="perm-checkbox w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                                            {{ $perm['can_update'] ? 'checked' : '' }}>
                                 </label>
                             </td>
@@ -166,7 +166,7 @@
                                     <input type="checkbox" 
                                            name="permissions[{{ $modulKey }}][can_delete]" 
                                            value="1" 
-                                           class="perm-checkbox w-5 h-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                           class="perm-checkbox w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                                            {{ $perm['can_delete'] ? 'checked' : '' }}>
                                 </label>
                             </td>

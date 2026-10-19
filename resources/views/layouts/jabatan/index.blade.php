@@ -33,7 +33,7 @@
     </div>
 
     <div class="master-stats">
-        <div class="stat-card stat-card-purple">
+        <div class="stat-card stat-card-blue">
             <div class="stat-card-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -106,7 +106,7 @@
                         </td>
                         <td>
                             @if($jabatan->isShift())
-                                <span class="badge badge-purple" style="font-size: 12px; font-weight: 600;">
+                                <span class="badge badge-blue" style="font-size: 12px; font-weight: 600;">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline-block; vertical-align:middle; margin-right:3px;"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
                                     2 Shift Bergilir
                                 </span>

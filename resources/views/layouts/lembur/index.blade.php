@@ -52,7 +52,7 @@
     {{-- 5 Stat Cards --}}
     <div class="master-stats absensi-stats">
         {{-- Total Jam Lembur --}}
-        <div class="stat-card stat-card-purple">
+        <div class="stat-card stat-card-blue">
             <div class="stat-card-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>

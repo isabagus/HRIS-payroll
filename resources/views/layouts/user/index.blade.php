@@ -69,7 +69,7 @@
                     @php
                         $roleName = $u->role?->nama_role ?? 'Tidak Ada Role';
                         $avatarClass = match(strtolower($roleName)) {
-                            'super admin' => 'data-avatar-purple',
+                            'super admin' => 'data-avatar-blue',
                             'manager'     => 'data-avatar-blue',
                             'admin'       => 'data-avatar-orange',
                             default       => 'data-avatar-teal',
@@ -89,7 +89,7 @@
                             </div>
                         </td>
                         <td>
-                            <span class="px-3 py-1 text-xs font-bold rounded-full {{ strtolower($roleName) === 'super admin' ? 'bg-purple-100 text-purple-700' : (strtolower($roleName) === 'manager' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700') }}">
+                            <span class="px-3 py-1 text-xs font-bold rounded-full {{ strtolower($roleName) === 'super admin' ? 'bg-blue-100 text-blue-800' : (strtolower($roleName) === 'manager' ? 'bg-sky-100 text-sky-700' : 'bg-amber-100 text-amber-700') }}">
                                 {{ $roleName }}
                             </span>
                         </td>

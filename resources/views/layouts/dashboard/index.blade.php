@@ -128,7 +128,7 @@
             </svg>
         </a>
         <a href="{{ url('/jabatan') }}" class="dash-mini-card" id="card-jabatan">
-            <div class="dash-mini-icon dash-mini-purple">
+            <div class="dash-mini-icon dash-mini-blue">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
                     <circle cx="9" cy="7" r="4"/>
@@ -323,7 +323,7 @@
                     <tr>
                         <td>
                             <div class="data-name-cell">
-                                <div class="data-avatar data-avatar-purple">
+                                <div class="data-avatar data-avatar-blue">
                                     {{ strtoupper(substr($k->nama_karyawan, 0, 1)) }}
                                 </div>
                                 <div>

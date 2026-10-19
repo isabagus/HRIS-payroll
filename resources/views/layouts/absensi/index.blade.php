@@ -168,7 +168,7 @@
                 <span class="stat-card-label">Total Alpha</span>
             </div>
         </div>
-        <div class="stat-card stat-card-purple">
+        <div class="stat-card stat-card-teal">
             <div class="stat-card-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>

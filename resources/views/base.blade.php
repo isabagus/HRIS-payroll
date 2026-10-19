@@ -55,7 +55,7 @@
             font-size: 0.875rem !important;
         }
         .select2-container--default .select2-results__option--highlighted[aria-selected] {
-            background-color: #4f46e5 !important;
+            background-color: #2563eb !important;
             color: white !important;
         }
 
@@ -80,7 +80,7 @@
             font-weight: 600 !important;
             padding: 10px 22px !important;
             font-size: 0.875rem !important;
-            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25) !important;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25) !important;
         }
         button.swal2-cancel {
             border-radius: 12px !important;

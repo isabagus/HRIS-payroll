@@ -59,7 +59,7 @@
         </div>
 
         {{-- MASTER DATA SECTION --}}
-        @if($u && ($u->hasHakAkses('instansi', 'read') || $u->hasHakAkses('divisi', 'read') || $u->hasHakAkses('jabatan', 'read') || $u->hasHakAkses('status_karyawan', 'read') || $u->hasHakAkses('gaji_pokok', 'read') || $u->hasHakAkses('shift', 'read') || ($u->role && in_array(strtolower($u->role->nama_role), ['super admin', 'manager']))))
+        @if($isSuperAdmin || ($u && ($u->hasHakAkses('instansi', 'read') || $u->hasHakAkses('divisi', 'read') || $u->hasHakAkses('jabatan', 'read') || $u->hasHakAkses('status_karyawan', 'read') || $u->hasHakAkses('gaji_pokok', 'read') || $u->hasHakAkses('shift', 'read'))))
         <div class="nav-section">
             <span class="nav-section-label">MASTER DATA</span>
             <ul class="nav-list">
@@ -135,7 +135,7 @@
                 </li>
                 @endif
 
-                @if($u->hasHakAkses('shift', 'read') || ($u->role && in_array(strtolower($u->role->nama_role), ['super admin', 'manager'])))
+                @if($u->hasHakAkses('shift', 'read'))
                 <li class="nav-item">
                     <a href="/shift" class="nav-link {{ request()->is('shift*') ? 'active' : '' }}" data-tooltip="Shift Kerja">
                         <span class="nav-icon">

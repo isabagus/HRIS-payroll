@@ -64,14 +64,14 @@
         }
 
         .btn-glass-primary {
-            background: linear-gradient(135deg, #4f46e5, #6366f1);
+            background: linear-gradient(135deg, #1d4ed8, #2563eb);
             transition: all 0.2s ease;
         }
 
         .btn-glass-primary:hover {
-            background: linear-gradient(135deg, #4338ca, #4f46e5);
+            background: linear-gradient(135deg, #1e40af, #1d4ed8);
             transform: translateY(-1px);
-            box-shadow: 0 8px 20px rgba(79, 70, 229, 0.4);
+            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.4);
         }
 
         .btn-glass-secondary {

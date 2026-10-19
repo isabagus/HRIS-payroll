@@ -100,7 +100,7 @@
     {{-- CREATE MODE: DYNAMIC MULTI-ROW --}}
     <div class="form-card form-card-wide">
         <div class="form-card-header">
-            <div class="form-card-icon form-card-icon-purple">
+            <div class="form-card-icon form-card-icon-blue">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
                 </svg>

@@ -14,6 +14,7 @@ class HakAksesRoleController extends Controller
         'jabatan'              => 'Master Data Jabatan',
         'status_karyawan'      => 'Master Data Status Karyawan',
         'gaji_pokok'           => 'Master Data Komponen Gaji',
+        'shift'                => 'Master Data Shift Kerja',
         'karyawan'             => 'Data Karyawan',
         'gaji_karyawan'        => 'Pengaturan Gaji Karyawan',
         'absensi'              => 'Rekap & Input Absensi',
