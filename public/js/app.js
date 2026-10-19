@@ -105,4 +105,58 @@
         if (text) link.setAttribute('data-tooltip', text.textContent.trim());
     });
 
+    // ==========================================
+    // AUTO FORMAT RUPIAH / CURRENCY INPUTS
+    // ==========================================
+    window.formatRupiahString = function(value) {
+        if (!value && value !== 0) return '';
+        var clean = value.toString().replace(/[^\d]/g, '');
+        if (!clean) return '';
+        return clean.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    };
+
+    window.cleanRupiahString = function(value) {
+        if (!value && value !== 0) return '0';
+        return value.toString().replace(/\./g, '');
+    };
+
+    function attachCurrencyMask(input) {
+        if (!input || input.dataset.masked === 'true') return;
+        input.dataset.masked = 'true';
+
+        // Format initial value if exists
+        if (input.value) {
+            input.value = window.formatRupiahString(input.value);
+        }
+
+        input.addEventListener('input', function() {
+            var clean = this.value.replace(/[^\d]/g, '');
+            if (!clean) {
+                this.value = '';
+                return;
+            }
+            this.value = window.formatRupiahString(clean);
+        });
+    }
+
+    // Auto-init existing currency inputs
+    document.querySelectorAll('.currency-input').forEach(attachCurrencyMask);
+
+    // Auto-attach when dynamic input gets focus
+    document.addEventListener('focusin', function(e) {
+        if (e.target && e.target.classList && e.target.classList.contains('currency-input')) {
+            attachCurrencyMask(e.target);
+        }
+    });
+
+    // Auto-unmask all currency inputs before form submission
+    document.addEventListener('submit', function(e) {
+        var form = e.target;
+        if (form && form.querySelectorAll) {
+            form.querySelectorAll('.currency-input').forEach(function(input) {
+                input.value = window.cleanRupiahString(input.value);
+            });
+        }
+    }, true);
+
 })();

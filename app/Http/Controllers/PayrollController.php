@@ -375,10 +375,10 @@ class PayrollController extends Controller
                 $totalAlpha           = intval($item['total_alpha'] ?? 0);
                 $totalGajiPokokHarian = floatval($item['total_gaji_pokok_harian'] ?? 0);
                 $totalLemburan        = floatval($item['total_lemburan'] ?? 0);
-                $potonganKasbon       = floatval($item['potongan_kasbon'] ?? 0);
-                $potonganBpjs         = floatval($item['potongan_bpjs'] ?? 0);
-                $bpjsPerusahaan       = floatval($item['bpjs_perusahaan'] ?? 0);
-                $potonganLain         = floatval($item['potongan_lain'] ?? 0);
+                $potonganKasbon       = floatval(str_replace(['.', ','], '', (string)($item['potongan_kasbon'] ?? 0)));
+                $potonganBpjs         = floatval(str_replace(['.', ','], '', (string)($item['potongan_bpjs'] ?? 0)));
+                $bpjsPerusahaan       = floatval(str_replace(['.', ','], '', (string)($item['bpjs_perusahaan'] ?? 0)));
+                $potonganLain         = floatval(str_replace(['.', ','], '', (string)($item['potongan_lain'] ?? 0)));
 
                 $totalPendapatan = floatval($item['total_pendapatan'] ?? 0);
                 $gajiBersih      = max(0, $totalPendapatan - ($potonganKasbon + $potonganBpjs + $potonganLain));

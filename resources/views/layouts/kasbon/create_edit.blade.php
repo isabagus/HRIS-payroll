@@ -82,7 +82,7 @@
             <div class="form-group">
                 <label class="form-label">Nominal Kasbon (Rp) <span class="required-mark">*</span></label>
                 <div class="input-wrapper">
-                    <input type="number" name="total_kasbon" class="form-input" placeholder="Misal: 500000" value="{{ old('total_kasbon', $kasbon->total_kasbon) }}" required>
+                    <input type="text" inputmode="numeric" name="total_kasbon" class="form-input currency-input" placeholder="Misal: 500.000" value="{{ old('total_kasbon', $kasbon->total_kasbon ? number_format($kasbon->total_kasbon, 0, ',', '.') : '') }}" required>
                 </div>
             </div>
 
@@ -146,7 +146,7 @@
                         <div class="form-group">
                             <label class="form-label">Nominal Kasbon (Rp) <span class="required-mark">*</span></label>
                             <div class="input-wrapper">
-                                <input type="number" name="items[0][total_kasbon]" class="form-input" placeholder="Misal: 500000" required>
+                                <input type="text" inputmode="numeric" name="items[0][total_kasbon]" class="form-input currency-input" placeholder="Misal: 500.000" required>
                             </div>
                         </div>
                     </div>
@@ -242,7 +242,7 @@ document.getElementById('btn-add-kasbon-row')?.addEventListener('click', functio
             <div class="form-group">
                 <label class="form-label">Nominal Kasbon (Rp) <span class="required-mark">*</span></label>
                 <div class="input-wrapper">
-                    <input type="number" name="items[${itemIndex}][total_kasbon]" class="form-input" placeholder="Misal: 500000" required>
+                    <input type="text" inputmode="numeric" name="items[${itemIndex}][total_kasbon]" class="form-input currency-input" placeholder="Misal: 500.000" required>
                 </div>
             </div>
         </div>

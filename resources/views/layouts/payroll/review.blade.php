@@ -196,11 +196,11 @@
 
                             {{-- EDITABLE MANUALLY POTONGAN KASBON INPUT --}}
                             <td>
-                                <input type="number" min="0" max="{{ $item['sisa_kasbon_aktif'] }}" step="any"
+                                <input type="text" inputmode="numeric"
                                        name="items[{{ $idx }}][potongan_kasbon]"
                                        id="kasbon-input-{{ $idx }}"
-                                       class="form-input text-right input-kasbon-manual"
-                                       value="{{ $item['potongan_kasbon'] }}"
+                                       class="form-input text-right input-kasbon-manual currency-input"
+                                       value="{{ $item['potongan_kasbon'] ? number_format($item['potongan_kasbon'], 0, ',', '.') : '0' }}"
                                        data-idx="{{ $idx }}"
                                        data-sisa="{{ $item['sisa_kasbon_aktif'] }}"
                                        data-pendapatan="{{ $item['total_pendapatan'] }}"
@@ -215,14 +215,14 @@
 
                             {{-- EDITABLE MANUALLY POTONGAN LAINNYA / SANKSI INPUT --}}
                             <td>
-                                <input type="number" min="0" step="any"
+                                <input type="text" inputmode="numeric"
                                        name="items[{{ $idx }}][potongan_lain]"
                                        id="lain-input-{{ $idx }}"
-                                       class="form-input text-right"
-                                       value="{{ $item['potongan_lain'] }}"
+                                       class="form-input text-right currency-input"
+                                       value="{{ $item['potongan_lain'] ? number_format($item['potongan_lain'], 0, ',', '.') : '0' }}"
                                        data-idx="{{ $idx }}"
                                        oninput="recalculateReviewRow({{ $idx }})"
-                                       placeholder="Misal telat"
+                                       placeholder="0"
                                        style="padding:6px 10px; font-weight:600; font-size:12px; color:var(--danger);">
                                 <div class="text-xs text-muted" style="margin-top:2px; font-size:9px;">
                                     Terlambat / Sanksi
@@ -231,11 +231,11 @@
 
                             {{-- EDITABLE MANUALLY BPJS KARYAWAN INPUT --}}
                             <td>
-                                <input type="number" min="0" step="any"
+                                <input type="text" inputmode="numeric"
                                        name="items[{{ $idx }}][potongan_bpjs]"
                                        id="bpjs-input-{{ $idx }}"
-                                       class="form-input text-right"
-                                       value="{{ $item['potongan_bpjs'] }}"
+                                       class="form-input text-right currency-input"
+                                       value="{{ $item['potongan_bpjs'] ? number_format($item['potongan_bpjs'], 0, ',', '.') : '0' }}"
                                        data-idx="{{ $idx }}"
                                        oninput="recalculateReviewRow({{ $idx }})"
                                        placeholder="0"
@@ -247,11 +247,11 @@
 
                             {{-- EDITABLE MANUALLY BPJS KANTOR / PERUSAHAAN INPUT --}}
                             <td>
-                                <input type="number" min="0" step="any"
+                                <input type="text" inputmode="numeric"
                                        name="items[{{ $idx }}][bpjs_perusahaan]"
                                        id="bpjs-kantor-input-{{ $idx }}"
-                                       class="form-input text-right"
-                                       value="{{ $item['bpjs_perusahaan'] ?? 0 }}"
+                                       class="form-input text-right currency-input"
+                                       value="{{ ($item['bpjs_perusahaan'] ?? 0) ? number_format($item['bpjs_perusahaan'], 0, ',', '.') : '0' }}"
                                        placeholder="0"
                                        style="padding:6px 10px; font-weight:600; font-size:12px; color:#1e293b;">
                                 <div class="text-xs text-muted" style="margin-top:2px; font-size:9px;">
@@ -289,6 +289,13 @@
 
 @push('scripts')
 <script>
+function parseCurrency(val) {
+    if (!val) return 0;
+    if (typeof val === 'number') return val;
+    const clean = val.toString().replace(/[^0-9]/g, '');
+    return parseFloat(clean) || 0;
+}
+
 function recalculateReviewRow(idx) {
     const kasbonInput = document.getElementById('kasbon-input-' + idx);
     const kasbonError = document.getElementById('kasbon-error-' + idx);
@@ -300,9 +307,9 @@ function recalculateReviewRow(idx) {
 
     const pendapatan   = parseFloat(kasbonInput.getAttribute('data-pendapatan')) || 0;
     const sisaKasbon   = parseFloat(kasbonInput.getAttribute('data-sisa')) || 0;
-    const bpjsKaryawan = parseFloat(bpjsInput && bpjsInput.value !== '' ? bpjsInput.value : 0) || 0;
-    const kasbon       = parseFloat(kasbonInput.value) || 0;
-    const lain         = parseFloat(lainInput ? lainInput.value : 0) || 0;
+    const bpjsKaryawan = parseCurrency(bpjsInput?.value);
+    const kasbon       = parseCurrency(kasbonInput?.value);
+    const lain         = parseCurrency(lainInput?.value);
 
     // Real-time validation for Kasbon input
     if (kasbon > sisaKasbon) {
@@ -333,7 +340,7 @@ function confirmPayrollSave() {
     let errorMessage = '';
 
     kasbonInputs.forEach(input => {
-        const val = parseFloat(input.value) || 0;
+        const val = parseCurrency(input.value);
         const sisa = parseFloat(input.getAttribute('data-sisa')) || 0;
         if (val > sisa) {
             hasValidationError = true;

@@ -59,7 +59,7 @@
         </div>
 
         {{-- MASTER DATA SECTION --}}
-        @if($u && ($u->hasHakAkses('instansi', 'read') || $u->hasHakAkses('divisi', 'read') || $u->hasHakAkses('jabatan', 'read') || $u->hasHakAkses('status_karyawan', 'read') || $u->hasHakAkses('gaji_pokok', 'read')))
+        @if($u && ($u->hasHakAkses('instansi', 'read') || $u->hasHakAkses('divisi', 'read') || $u->hasHakAkses('jabatan', 'read') || $u->hasHakAkses('status_karyawan', 'read') || $u->hasHakAkses('gaji_pokok', 'read') || $u->hasHakAkses('shift', 'read') || ($u->role && in_array(strtolower($u->role->nama_role), ['super admin', 'manager']))))
         <div class="nav-section">
             <span class="nav-section-label">MASTER DATA</span>
             <ul class="nav-list">
@@ -131,6 +131,20 @@
                             </svg>
                         </span>
                         <span class="nav-text">Komponen Gaji</span>
+                    </a>
+                </li>
+                @endif
+
+                @if($u->hasHakAkses('shift', 'read') || ($u->role && in_array(strtolower($u->role->nama_role), ['super admin', 'manager'])))
+                <li class="nav-item">
+                    <a href="/shift" class="nav-link {{ request()->is('shift*') ? 'active' : '' }}" data-tooltip="Shift Kerja">
+                        <span class="nav-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                <circle cx="12" cy="12" r="10"/>
+                                <polyline points="12 6 12 12 16 14"/>
+                            </svg>
+                        </span>
+                        <span class="nav-text">Shift Kerja</span>
                     </a>
                 </li>
                 @endif
@@ -258,14 +272,14 @@
             <ul class="nav-list">
                 @if($isSuperAdmin || ($u && $u->hasHakAkses('pengaturan_jam_kerja', 'read')))
                 <li class="nav-item">
-                    <a href="/pengaturan-jam-kerja" class="nav-link {{ request()->is('pengaturan-jam-kerja*') ? 'active' : '' }}" data-tooltip="Pengaturan Jam Kerja">
+                    <a href="/pengaturan-jam-kerja" class="nav-link {{ request()->is('pengaturan-jam-kerja*') ? 'active' : '' }}" data-tooltip="Toleransi Keterlambatan">
                         <span class="nav-icon">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                                 <circle cx="12" cy="12" r="10"/>
                                 <polyline points="12 6 12 12 16 14"/>
                             </svg>
                         </span>
-                        <span class="nav-text">Jam Kerja & Toleransi</span>
+                        <span class="nav-text">Toleransi Keterlambatan</span>
                     </a>
                 </li>
                 @endif

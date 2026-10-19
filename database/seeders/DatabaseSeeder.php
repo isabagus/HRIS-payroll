@@ -12,6 +12,7 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             HakAksesRoleSeeder::class,
             PengaturanTarifSeeder::class,
+            ShiftSeeder::class,
         ]);
     }
 }

@@ -32,26 +32,36 @@ class InstansiController extends Controller
         if ($request->has('items') && is_array($request->items)) {
             $request->validate([
                 'items.*.nama_instansi' => 'required|string|max:150',
+                'items.*.logo'          => 'nullable|image|mimes:png,jpg,jpeg,svg,webp|max:2048',
             ], [
-                'items.*.nama_instansi.required' => 'Nama instansi wajib diisi pada setiap baris.',
+                'items.*.nama_instansi.required' => 'Nama brand / instansi wajib diisi pada setiap baris.',
+                'items.*.logo.image'             => 'File logo harus berupa gambar valid.',
+                'items.*.logo.max'               => 'Ukuran logo maksimal 2MB.',
             ]);
 
             $inserted = 0;
-            foreach ($request->items as $item) {
+            foreach ($request->items as $idx => $item) {
                 $nama = trim($item['nama_instansi'] ?? '');
                 if (!empty($nama)) {
                     $slug = Str::slug($nama);
                     $logo = null;
-                    if (file_exists(public_path("images/logo_{$slug}.png"))) {
+                    if ($request->hasFile("items.{$idx}.logo")) {
+                        $file = $request->file("items.{$idx}.logo");
+                        $logo = 'logo_' . $slug . '_' . time() . '_' . $idx . '.' . $file->getClientOriginalExtension();
+                        $file->move(public_path('images'), $logo);
+                    } elseif (file_exists(public_path("images/logo_{$slug}.png"))) {
                         $logo = "logo_{$slug}.png";
                     }
-                    Instansi::firstOrCreate(['nama_instansi' => $nama], ['logo' => $logo]);
+                    Instansi::create([
+                        'nama_instansi' => $nama,
+                        'logo'          => $logo,
+                    ]);
                     $inserted++;
                 }
             }
 
             return redirect()->route('instansi.index')
-                ->with('success', "{$inserted} Instansi berhasil ditambahkan.");
+                ->with('success', "{$inserted} Brand / Instansi berhasil ditambahkan.");
         }
 
         // Single item fallback

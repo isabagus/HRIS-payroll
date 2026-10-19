@@ -107,9 +107,18 @@ class AbsensiService
             }
         }
 
-        // 3. Determine JAM PULANG EFEKTIF
-        // MIN(jam_pulang_aktual, jam_kerja_selesai)
-        $jamPulangEfektif = $jamPulangCarbon->gt($jamKerjaSelesai) ? $jamKerjaSelesai->copy() : $jamPulangCarbon->copy();
+        // 3. Determine JAM PULANG EFEKTIF (SISTEM KOMPENSASI TUKAR JAM KERJA)
+        // Jika karyawan datang terlambat, batas jam pulang reguler diperpanjang sebesar
+        // menit keterlambatan agar karyawan dapat melunasi kuota 8 jam kerja regulernya.
+        $batasPulangMaksimal = $jamKerjaSelesai->copy();
+        if ($isTelat && $terlambatMenit > 0) {
+            $batasPulangMaksimal->addMinutes($terlambatMenit);
+        }
+
+        // Jam pulang efektif di-cap pada batas maksimal kompensasi (tidak melebihi jam pelunasan)
+        $jamPulangEfektif = $jamPulangCarbon->gt($batasPulangMaksimal) 
+            ? $batasPulangMaksimal->copy() 
+            : $jamPulangCarbon->copy();
 
         // 4. Gross Duration in minutes
         $durasiKotor = $jamMasukEfektif->lt($jamPulangEfektif) ? $jamMasukEfektif->diffInMinutes($jamPulangEfektif) : 0;

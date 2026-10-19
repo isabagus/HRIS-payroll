@@ -7,6 +7,7 @@ use App\Http\Controllers\DivisiController;
 use App\Http\Controllers\JabatanController;
 use App\Http\Controllers\StatusController;
 use App\Http\Controllers\KomponenGajiController;
+use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\KaryawanController;
 use App\Http\Controllers\AbsensiController;
 use App\Http\Controllers\InstansiController;
@@ -94,6 +95,15 @@ Route::middleware(['auth'])->group(function () {
     Route::get('gaji/{gaji}/edit', [KomponenGajiController::class, 'edit'])->name('gaji.edit')->middleware('hak_akses:gaji_pokok,update');
     Route::put('gaji/{gaji}', [KomponenGajiController::class, 'update'])->name('gaji.update')->middleware('hak_akses:gaji_pokok,update');
     Route::delete('gaji/{gaji}', [KomponenGajiController::class, 'destroy'])->name('gaji.destroy')->middleware('hak_akses:gaji_pokok,delete');
+
+    // Master Data - Shift Kerja
+    Route::get('shift', [ShiftController::class, 'index'])->name('shift.index')->middleware('hak_akses:shift,read');
+    Route::get('shift/create', [ShiftController::class, 'create'])->name('shift.create')->middleware('hak_akses:shift,create');
+    Route::post('shift', [ShiftController::class, 'store'])->name('shift.store')->middleware('hak_akses:shift,create');
+    Route::post('shift/{shift}/set-default', [ShiftController::class, 'setDefault'])->name('shift.set-default')->middleware('hak_akses:shift,update');
+    Route::get('shift/{shift}/edit', [ShiftController::class, 'edit'])->name('shift.edit')->middleware('hak_akses:shift,update');
+    Route::put('shift/{shift}', [ShiftController::class, 'update'])->name('shift.update')->middleware('hak_akses:shift,update');
+    Route::delete('shift/{shift}', [ShiftController::class, 'destroy'])->name('shift.destroy')->middleware('hak_akses:shift,delete');
 
     // Kepegawaian - Data Karyawan
     Route::get('karyawan/export', [KaryawanController::class, 'export'])->name('karyawan.export')->middleware('hak_akses:karyawan,read');

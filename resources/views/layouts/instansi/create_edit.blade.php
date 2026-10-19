@@ -105,10 +105,19 @@
                             </svg>
                         </button>
                     </div>
-                    <div class="form-group" style="margin-bottom:0;">
-                        <label class="form-label">Nama Instansi / Perusahaan <span class="required-mark">*</span></label>
-                        <div class="input-wrapper">
-                            <input type="text" name="items[0][nama_instansi]" class="form-input" placeholder="Contoh: Estella, Memoirs, Pack Solution..." required>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label class="form-label">Nama Brand / Instansi <span class="required-mark">*</span></label>
+                            <div class="input-wrapper">
+                                <input type="text" name="items[0][nama_instansi]" class="form-input" placeholder="Contoh: Estella, Memoirs, Pack Solution..." required>
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label class="form-label">Upload Logo Brand (Opsional)</label>
+                            <div class="input-wrapper">
+                                <input type="file" name="items[0][logo]" class="form-input" accept="image/*">
+                            </div>
+                            <span class="text-xs text-muted" style="font-size:10px;">Format: PNG, JPG, JPEG, SVG, WEBP (Max 2MB)</span>
                         </div>
                     </div>
                 </div>
@@ -159,10 +168,19 @@ document.getElementById('btn-add-instansi-row')?.addEventListener('click', funct
                 </svg>
             </button>
         </div>
-        <div class="form-group" style="margin-bottom:0;">
-            <label class="form-label">Nama Instansi / Perusahaan <span class="required-mark">*</span></label>
-            <div class="input-wrapper">
-                <input type="text" name="items[${itemIndex}][nama_instansi]" class="form-input" placeholder="Nama instansi" required>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label">Nama Brand / Instansi <span class="required-mark">*</span></label>
+                <div class="input-wrapper">
+                    <input type="text" name="items[${itemIndex}][nama_instansi]" class="form-input" placeholder="Nama brand / instansi" required>
+                </div>
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label">Upload Logo Brand (Opsional)</label>
+                <div class="input-wrapper">
+                    <input type="file" name="items[${itemIndex}][logo]" class="form-input" accept="image/*">
+                </div>
+                <span class="text-xs text-muted" style="font-size:10px;">Format: PNG, JPG, JPEG, SVG, WEBP (Max 2MB)</span>
             </div>
         </div>
     `;

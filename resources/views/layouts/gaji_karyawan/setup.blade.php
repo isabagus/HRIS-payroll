@@ -129,8 +129,8 @@
                     </label>
                     <span class="text-[11px] font-medium text-indigo-700 bg-indigo-100/70 px-2 py-0.5 rounded-md">Basis Jam Kerja</span>
                 </div>
-                <input type="number" min="0" step="any" name="gaji_pokok" class="form-input w-full text-base font-bold text-indigo-950 rounded-xl bg-white"
-                       value="{{ old('gaji_pokok', $gajiPokokVal) }}" placeholder="7500" required>
+                <input type="text" inputmode="numeric" name="gaji_pokok" class="form-input w-full text-base font-bold text-indigo-950 rounded-xl bg-white currency-input"
+                       value="{{ old('gaji_pokok', $gajiPokokVal ? number_format($gajiPokokVal, 0, ',', '.') : '') }}" placeholder="7.500" required>
             </div>
 
             @php
@@ -178,9 +178,9 @@
                                 </label>
                                 <div class="relative">
                                     <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-xs text-slate-400 font-semibold">Rp</span>
-                                    <input type="number" min="0" step="any" name="komponen[{{ $komp->ID_komponen_gaji }}]"
-                                           class="form-input w-full text-sm rounded-lg pl-9 font-semibold text-slate-800"
-                                           value="{{ old('komponen.'.$komp->ID_komponen_gaji, $val > 0 ? $val : '') }}" placeholder="0">
+                                    <input type="text" inputmode="numeric" name="komponen[{{ $komp->ID_komponen_gaji }}]"
+                                           class="form-input w-full text-sm rounded-lg pl-9 font-semibold text-slate-800 currency-input"
+                                           value="{{ old('komponen.'.$komp->ID_komponen_gaji, $val > 0 ? number_format($val, 0, ',', '.') : '') }}" placeholder="0">
                                 </div>
                             </div>
                         @endforeach
@@ -219,9 +219,9 @@
                                 </label>
                                 <div class="relative">
                                     <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-xs text-rose-400 font-semibold">Rp</span>
-                                    <input type="number" min="0" step="any" name="komponen[{{ $komp->ID_komponen_gaji }}]"
-                                           class="form-input w-full text-sm rounded-lg pl-9 font-semibold text-rose-700"
-                                           value="{{ old('komponen.'.$komp->ID_komponen_gaji, $val > 0 ? $val : '') }}" placeholder="0">
+                                    <input type="text" inputmode="numeric" name="komponen[{{ $komp->ID_komponen_gaji }}]"
+                                           class="form-input w-full text-sm rounded-lg pl-9 font-semibold text-rose-700 currency-input"
+                                           value="{{ old('komponen.'.$komp->ID_komponen_gaji, $val > 0 ? number_format($val, 0, ',', '.') : '') }}" placeholder="0">
                                 </div>
                             </div>
                         @endforeach

@@ -20,6 +20,7 @@ class HakAksesRoleSeeder extends Seeder
             'jabatan',
             'status_karyawan',
             'gaji_pokok',
+            'shift',
             'karyawan',
             'gaji_karyawan',
             'absensi',

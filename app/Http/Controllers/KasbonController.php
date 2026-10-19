@@ -167,6 +167,15 @@ class KasbonController extends Controller
             ];
 
         if ($request->has('items') && is_array($request->items)) {
+            $items = $request->items;
+            foreach ($items as &$it) {
+                if (isset($it['total_kasbon'])) {
+                    $it['total_kasbon'] = str_replace(['.', ','], '', (string)$it['total_kasbon']);
+                }
+            }
+            unset($it);
+            $request->merge(['items' => $items]);
+
             $request->validate([
                 'items.*.ID_karyawan'  => 'required|exists:karyawans,ID_karyawan',
                 'items.*.tanggal'      => 'required|date',
@@ -196,6 +205,12 @@ class KasbonController extends Controller
                 ->with('success', "{$inserted} Data pengajuan kasbon berhasil ditambahkan {$statusMsg}.");
         }
 
+        if ($request->has('total_kasbon')) {
+            $request->merge([
+                'total_kasbon' => str_replace(['.', ','], '', (string)$request->total_kasbon)
+            ]);
+        }
+
         $request->validate([
             'ID_karyawan'  => 'required|exists:karyawans,ID_karyawan',
             'tanggal'      => 'required|date',
@@ -223,6 +238,12 @@ class KasbonController extends Controller
 
     public function update(Request $request, Kasbon $kasbon)
     {
+        if ($request->has('total_kasbon')) {
+            $request->merge([
+                'total_kasbon' => str_replace(['.', ','], '', (string)$request->total_kasbon)
+            ]);
+        }
+
         $request->validate([
             'ID_karyawan'      => 'required|exists:karyawans,ID_karyawan',
             'tanggal'          => 'required|date',

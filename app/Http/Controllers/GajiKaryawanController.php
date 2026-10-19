@@ -137,10 +137,11 @@ class GajiKaryawanController extends Controller
             $gajiPokokKomponen = KomponenGaji::where('nama_gaji', 'like', '%pokok%')->first();
 
             if ($gajiPokokInput !== null && $gajiPokokKomponen) {
+                $cleanPokok = str_replace(['.', ','], '', (string)$gajiPokokInput);
                 DetailGajiKaryawan::create([
                     'ID_gaji'          => $gajiHeader->ID_gaji,
                     'ID_komponen_gaji' => $gajiPokokKomponen->ID_komponen_gaji,
-                    'nominal_gaji'     => max(0, floatval($gajiPokokInput)),
+                    'nominal_gaji'     => max(0, floatval($cleanPokok)),
                 ]);
             }
 
@@ -155,7 +156,8 @@ class GajiKaryawanController extends Controller
                         continue;
                     }
 
-                    $nom = max(0, floatval($nominal ?? 0));
+                    $cleanNom = str_replace(['.', ','], '', (string)($nominal ?? 0));
+                    $nom = max(0, floatval($cleanNom));
                     DetailGajiKaryawan::create([
                         'ID_gaji'          => $gajiHeader->ID_gaji,
                         'ID_komponen_gaji' => $idKomponen,
