@@ -1,7 +1,7 @@
 # -----------------------------------------------
 # Stage 1: Build Frontend Assets (Vite)
 # -----------------------------------------------
-FROM node:20-alpine AS frontend_builder
+FROM node:22-alpine AS frontend_builder
 
 WORKDIR /app
 COPY package*.json ./
