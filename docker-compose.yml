@@ -1,0 +1,12 @@
+services:
+  hris_app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hris_app
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - ./.env:/var/www/.env
+      - ./storage:/var/www/storage
