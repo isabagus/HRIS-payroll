@@ -42,9 +42,10 @@ COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-# Atur permission untuk storage dan cache Laravel
-RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache \
-    && chmod -R 775 /var/www/storage /var/www/bootstrap/cache
+# Atur permission untuk storage, cache Laravel, dan direktori upload gambar
+RUN mkdir -p /var/www/public/images \
+    && chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache /var/www/public/images \
+    && chmod -R 775 /var/www/storage /var/www/bootstrap/cache /var/www/public/images
 
 EXPOSE 80
 

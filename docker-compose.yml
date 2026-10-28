@@ -10,3 +10,4 @@ services:
     volumes:
       - ./.env:/var/www/.env
       - ./storage:/var/www/storage
+      - ./public/images:/var/www/public/images
