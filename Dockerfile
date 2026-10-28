@@ -25,6 +25,12 @@ RUN apk add --no-cache bash curl git nginx supervisor \
 # Install Composer resmi
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
+# Konfigurasi PHP (upload limit & memory limit untuk import/export Excel)
+RUN echo "upload_max_filesize = 64M" >> /usr/local/etc/php/conf.d/custom.ini \
+    && echo "post_max_size = 64M" >> /usr/local/etc/php/conf.d/custom.ini \
+    && echo "memory_limit = 512M" >> /usr/local/etc/php/conf.d/custom.ini \
+    && echo "max_execution_time = 300" >> /usr/local/etc/php/conf.d/custom.ini
+
 WORKDIR /var/www
 
 # Copy source code project
