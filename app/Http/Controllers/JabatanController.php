@@ -18,7 +18,7 @@ class JabatanController extends Controller
                         $q->where('nama_divisi', 'like', "%{$search}%");
                     });
             })
-            ->latest()
+            ->orderBy('ID_jabatan', 'asc')
             ->paginate(10)
             ->withQueryString();
 

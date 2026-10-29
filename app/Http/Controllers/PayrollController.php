@@ -127,19 +127,26 @@ class PayrollController extends Controller
                 $jamKerjaHari        = $calc['total_jam_kerja'];
                 $totalJamKerjaBulan += $jamKerjaHari;
 
-                if ($jamKerjaHari > 0) {
-                    $daysPresentCount++;
-                }
-
                 $st = $calc['status_absensi'];
-                if ($st === 'Hadir') $countHadir++;
-                elseif ($st === 'Telat') $countTelat++;
-                elseif ($st === 'Setengah Hari') $countSetengahHari++;
-                elseif (in_array($st, ['Izin', 'Sakit'])) $totalIzin++;
-                elseif ($st === 'Alpha') $totalAlpha++;
+                if ($st === 'Hadir') {
+                    $countHadir++;
+                    $daysPresentCount += 1.0;
+                } elseif ($st === 'Telat') {
+                    $countTelat++;
+                    $daysPresentCount += 1.0;
+                } elseif ($st === 'Setengah Hari') {
+                    $countSetengahHari++;
+                    $daysPresentCount += 0.5; // Karyawan setengah hari dihitung 0.5 hari kerja
+                } elseif (in_array($st, ['Izin', 'Sakit'])) {
+                    $totalIzin++;
+                } elseif ($st === 'Alpha') {
+                    $totalAlpha++;
+                } elseif ($jamKerjaHari > 0) {
+                    $daysPresentCount += ($jamKerjaHari <= 4.0 ? 0.5 : 1.0);
+                }
             }
 
-            // Total Masuk represents count of days present (for Uang Makan flat daily rate)
+            // Total Masuk represents count of days present (untuk komponen harian seperti Uang Makan / Upah Harian)
             $totalMasuk = $daysPresentCount;
 
             // Weekly attendance check for Mingguan & Kerajinan
@@ -165,12 +172,12 @@ class PayrollController extends Controller
                     $wSt   = $wCalc['status_absensi'];
 
                     if ($wSt === 'Hadir') {
-                        $weekHadirCount++;
+                        $weekHadirCount += 1.0;
                     } elseif ($wSt === 'Telat') {
-                        $weekHadirCount++;
+                        $weekHadirCount += 1.0;
                         $weekLateCount++;
                     } elseif ($wSt === 'Setengah Hari') {
-                        $weekHadirCount++;
+                        $weekHadirCount += 0.5;
                         $weekSetengahHariCount++;
                     } elseif ($wSt === 'Alpha' || $wSt === 'Alpa') {
                         $weekAlphaCount++;
@@ -672,12 +679,12 @@ class PayrollController extends Controller
                 $wSt   = $wCalc['status_absensi'];
 
                 if ($wSt === 'Hadir') {
-                    $weekHadirCount++;
+                    $weekHadirCount += 1.0;
                 } elseif ($wSt === 'Telat') {
-                    $weekHadirCount++;
+                    $weekHadirCount += 1.0;
                     $weekLateCount++;
                 } elseif ($wSt === 'Setengah Hari') {
-                    $weekHadirCount++;
+                    $weekHadirCount += 0.5;
                     $weekSetengahHariCount++;
                 } elseif ($wSt === 'Alpha' || $wSt === 'Alpa') {
                     $weekAlphaCount++;

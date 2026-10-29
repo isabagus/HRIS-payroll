@@ -13,7 +13,7 @@ class KomponenGajiController extends Controller
         $komponens = KomponenGaji::when($search, function ($query, $search) {
                 $query->where('nama_gaji', 'like', "%{$search}%");
             })
-            ->latest()
+            ->orderBy('ID_komponen_gaji', 'asc')
             ->paginate(10)
             ->withQueryString();
 

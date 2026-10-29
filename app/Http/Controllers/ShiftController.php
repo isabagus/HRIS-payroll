@@ -15,8 +15,7 @@ class ShiftController extends Controller
                 $query->where('nama_shift', 'like', "%{$search}%")
                       ->orWhere('deskripsi', 'like', "%{$search}%");
             })
-            ->orderBy('is_default', 'desc')
-            ->orderBy('jam_masuk', 'asc')
+            ->orderBy('ID_shift', 'asc')
             ->paginate(10)
             ->withQueryString();
 

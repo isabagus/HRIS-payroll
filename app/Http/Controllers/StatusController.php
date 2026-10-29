@@ -13,7 +13,7 @@ class StatusController extends Controller
         $statuses = Status::when($search, function ($query, $search) {
                 $query->where('nama_status', 'like', "%{$search}%");
             })
-            ->latest()
+            ->orderBy('ID_status', 'asc')
             ->paginate(10)
             ->withQueryString();
 

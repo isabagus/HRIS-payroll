@@ -205,7 +205,15 @@ class AbsensiService
         }
 
         // 8. Determine STATUS ABSENSI
-        $statusAbsensi = $isTelat ? 'Telat' : 'Hadir';
+        if ($manualStatus === 'Setengah Hari' || strtolower((string)$manualStatus) === 'setengah hari') {
+            $statusAbsensi = 'Setengah Hari';
+        } elseif ($manualStatus && in_array($manualStatus, ['Izin', 'Sakit', 'Libur', 'Alpha', 'Alpa'])) {
+            $statusAbsensi = $manualStatus;
+        } elseif ($isTelat) {
+            $statusAbsensi = 'Telat';
+        } else {
+            $statusAbsensi = 'Hadir';
+        }
 
         return [
             'total_jam_kerja'       => $totalJamKerja,

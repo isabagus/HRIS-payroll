@@ -225,7 +225,7 @@
         <tr>
             <td class="col-label">Uang Makan</td>
             <td class="col-colon">:</td>
-            <td class="col-calc">{{ $totalMasuk }} x Rp. {{ number_format($uangMakanPerHari, 0, ',', '.') }}</td>
+            <td class="col-calc">{{ (float)$totalMasuk }} x Rp. {{ number_format($uangMakanPerHari, 0, ',', '.') }}</td>
             <td class="col-eq">=</td>
             <td class="col-val">Rp. {{ number_format($hasilUangMakan, 0, ',', '.') }}</td>
         </tr>

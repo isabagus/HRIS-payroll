@@ -13,7 +13,7 @@ class DivisiController extends Controller
         $divisis = Divisi::when($search, function ($query, $search) {
                 $query->where('nama_divisi', 'like', "%{$search}%");
             })
-            ->latest()
+            ->orderBy('ID_divisi', 'asc')
             ->paginate(10)
             ->withQueryString();
 

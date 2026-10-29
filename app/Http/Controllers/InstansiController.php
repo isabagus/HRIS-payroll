@@ -14,7 +14,7 @@ class InstansiController extends Controller
         $instansis = Instansi::when($search, function ($query, $search) {
                 $query->where('nama_instansi', 'like', "%{$search}%");
             })
-            ->latest()
+            ->orderBy('ID_instansi', 'asc')
             ->paginate(10)
             ->withQueryString();
 
