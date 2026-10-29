@@ -30,8 +30,9 @@ class KomponenGajiController extends Controller
         // Support dynamic multi-row input
         if ($request->has('items') && is_array($request->items)) {
             $request->validate([
-                'items.*.nama_gaji' => 'required|string|max:100',
-                'items.*.jenis'     => 'required|in:pendapatan,potongan',
+                'items.*.nama_gaji'    => 'required|string|max:100',
+                'items.*.jenis'        => 'required|in:pendapatan,potongan',
+                'items.*.tipe_hitung'  => 'nullable|in:per_jam,per_hari,per_minggu,per_minggu_rajin,tetap',
             ], [
                 'items.*.nama_gaji.required' => 'Nama komponen gaji wajib diisi pada setiap baris.',
                 'items.*.jenis.required'     => 'Jenis kategori wajib dipilih pada setiap baris.',
@@ -39,12 +40,13 @@ class KomponenGajiController extends Controller
 
             $inserted = 0;
             foreach ($request->items as $item) {
-                $nama  = trim($item['nama_gaji'] ?? '');
-                $jenis = $item['jenis'] ?? 'pendapatan';
+                $nama       = trim($item['nama_gaji'] ?? '');
+                $jenis      = $item['jenis'] ?? 'pendapatan';
+                $tipeHitung = $item['tipe_hitung'] ?? 'tetap';
                 if (!empty($nama)) {
                     KomponenGaji::firstOrCreate(
                         ['nama_gaji' => $nama],
-                        ['jenis' => $jenis]
+                        ['jenis' => $jenis, 'tipe_hitung' => $tipeHitung]
                     );
                     $inserted++;
                 }
@@ -56,8 +58,9 @@ class KomponenGajiController extends Controller
 
         // Single item fallback
         $request->validate([
-            'nama_gaji' => 'required|string|max:100|unique:komponen_gajis,nama_gaji',
-            'jenis'     => 'required|in:pendapatan,potongan',
+            'nama_gaji'   => 'required|string|max:100|unique:komponen_gajis,nama_gaji',
+            'jenis'       => 'required|in:pendapatan,potongan',
+            'tipe_hitung' => 'nullable|in:per_jam,per_hari,per_minggu,per_minggu_rajin,tetap',
         ], [
             'nama_gaji.required' => 'Nama komponen gaji wajib diisi.',
             'nama_gaji.unique'   => 'Nama komponen gaji sudah terdaftar.',
@@ -65,7 +68,11 @@ class KomponenGajiController extends Controller
             'jenis.required'     => 'Jenis komponen gaji wajib dipilih.',
         ]);
 
-        KomponenGaji::create($request->only('nama_gaji', 'jenis'));
+        KomponenGaji::create([
+            'nama_gaji'   => $request->nama_gaji,
+            'jenis'       => $request->jenis,
+            'tipe_hitung' => $request->input('tipe_hitung', 'tetap'),
+        ]);
 
         return redirect()->route('gaji.index')
             ->with('success', 'Komponen gaji berhasil ditambahkan.');
@@ -79,8 +86,9 @@ class KomponenGajiController extends Controller
     public function update(Request $request, KomponenGaji $gaji)
     {
         $request->validate([
-            'nama_gaji' => 'required|string|max:100|unique:komponen_gajis,nama_gaji,' . $gaji->ID_komponen_gaji . ',ID_komponen_gaji',
-            'jenis'     => 'required|in:pendapatan,potongan',
+            'nama_gaji'   => 'required|string|max:100|unique:komponen_gajis,nama_gaji,' . $gaji->ID_komponen_gaji . ',ID_komponen_gaji',
+            'jenis'       => 'required|in:pendapatan,potongan',
+            'tipe_hitung' => 'nullable|in:per_jam,per_hari,per_minggu,per_minggu_rajin,tetap',
         ], [
             'nama_gaji.required' => 'Nama komponen gaji wajib diisi.',
             'nama_gaji.unique'   => 'Nama komponen gaji sudah terdaftar.',
@@ -88,7 +96,11 @@ class KomponenGajiController extends Controller
             'jenis.required'     => 'Jenis komponen gaji wajib dipilih.',
         ]);
 
-        $gaji->update($request->only('nama_gaji', 'jenis'));
+        $gaji->update([
+            'nama_gaji'   => $request->nama_gaji,
+            'jenis'       => $request->jenis,
+            'tipe_hitung' => $request->input('tipe_hitung', 'tetap'),
+        ]);
 
         return redirect()->route('gaji.index')
             ->with('success', 'Komponen gaji berhasil diperbarui.');

@@ -107,52 +107,7 @@ class PayrollController extends Controller
                 ->where('ID_gaji', $gajiHeader->ID_gaji)
                 ->get();
 
-            $gajiPokokRate        = 0;
-            $uangMakanRate        = 0;
-            $mingguanRate         = 0;
-            $kerajinanRate        = 0;
-            $bulananRate          = 0;
-            $tunjanganJabatanRate   = 0;
-            $potonganBpjsRate       = 0;
-            $bpjsPerusahaanRate     = 96000;
-            $totalPotonganRutinLain = 0;
-
-            foreach ($details as $det) {
-                $komp  = $det->komponenGaji;
-                $n     = strtolower($komp->nama_gaji ?? '');
-                $val   = floatval($det->nominal_gaji);
-                $jenis = $komp->jenis ?? 'pendapatan';
-
-                if ($jenis === 'potongan') {
-                    if (str_contains($n, 'perusahaan') || str_contains($n, 'kantor')) {
-                        $bpjsPerusahaanRate = $val;
-                    } elseif (str_contains($n, 'bpjs')) {
-                        $potonganBpjsRate = $val;
-                    } else {
-                        $totalPotonganRutinLain += $val;
-                    }
-                } else {
-                    if (str_contains($n, 'pokok')) {
-                        $gajiPokokRate = $val;
-                    } elseif (str_contains($n, 'makan')) {
-                        $uangMakanRate = $val;
-                    } elseif (str_contains($n, 'mingguan')) {
-                        $mingguanRate = $val;
-                    } elseif (str_contains($n, 'kerajinan')) {
-                        $kerajinanRate = $val;
-                    } elseif (str_contains($n, 'bulanan')) {
-                        $bulananRate = $val;
-                    } elseif (str_contains($n, 'jabatan')) {
-                        $tunjanganJabatanRate = $val;
-                    }
-                }
-            }
-
-            if ($gajiPokokRate <= 0 && $karyawan->gaji_pokok > 0) {
-                $gajiPokokRate = floatval($karyawan->gaji_pokok);
-            }
-
-            // 1. Calculate Attendance using AbsensiService
+            // 1. Calculate Attendance using AbsensiService terlebih dahulu agar absensi siap untuk kalkulasi komponen
             $absensis = Absensi::where('ID_karyawan', $id)
                 ->whereMonth('date', $bulan)
                 ->whereYear('date', $tahun)
@@ -188,8 +143,6 @@ class PayrollController extends Controller
             $totalMasuk = $daysPresentCount;
 
             // Weekly attendance check for Mingguan & Kerajinan
-            // Bonus Mingguan: syarat = 5+ hari hadir, TIDAK ADA Alpha (boleh Telat)
-            // Bonus Kerajinan: syarat LEBIH KETAT = 5+ hari hadir, TIDAK ADA Alpha, TIDAK ADA Telat, TIDAK ADA SetengahHari
             $fullWeeksCount      = 0; // dapat Mingguan
             $kerajinanWeeksCount = 0; // dapat Kerajinan
 
@@ -214,34 +167,99 @@ class PayrollController extends Controller
                     if ($wSt === 'Hadir') {
                         $weekHadirCount++;
                     } elseif ($wSt === 'Telat') {
-                        $weekHadirCount++;  // tetap hadir, tidak Alpha
+                        $weekHadirCount++;
                         $weekLateCount++;
                     } elseif ($wSt === 'Setengah Hari') {
-                        $weekHadirCount++;  // tetap hadir, tidak Alpha
+                        $weekHadirCount++;
                         $weekSetengahHariCount++;
                     } elseif ($wSt === 'Alpha' || $wSt === 'Alpa') {
                         $weekAlphaCount++;
                     }
                 }
 
-                // Bonus MINGGUAN: tidak ada Alpha (Telat masih boleh)
                 if ($weekHadirCount >= 5 && $weekAlphaCount == 0) {
                     $fullWeeksCount++;
-
-                    // Bonus KERAJINAN: tidak ada Alpha, tidak ada Telat, tidak ada Setengah Hari
                     if ($weekLateCount == 0 && $weekSetengahHariCount == 0) {
                         $kerajinanWeeksCount++;
                     }
                 }
             }
 
-            // Calculated Income Components
-            $totalGajiPokokHarian  = $totalJamKerjaBulan * $gajiPokokRate;
-            $totalUangMakan        = $totalMasuk * $uangMakanRate;
-            $totalMingguan         = $fullWeeksCount * $mingguanRate;
-            $totalKerajinan        = $kerajinanWeeksCount * $kerajinanRate;
-            $totalBulanan          = $bulananRate;
-            $totalTunjanganJabatan = ($karyawan->id_jabatan && $tunjanganJabatanRate > 0) ? $tunjanganJabatanRate : 0;
+            // 2. Kalkulasi Dinamis Semua Komponen Gaji Karyawan
+            $gajiPokokRate          = 0;
+            $uangMakanRate          = 0;
+            $mingguanRate           = 0;
+            $kerajinanRate          = 0;
+            $bulananRate            = 0;
+            $tunjanganJabatanRate   = 0;
+            $potonganBpjsRate       = 0;
+            $bpjsPerusahaanRate     = 96000;
+            $totalPotonganRutinLain = 0;
+            $totalGajiPokokHarian   = 0;
+            $totalUangMakan         = 0;
+            $totalMingguan          = 0;
+            $totalKerajinan         = 0;
+            $totalBulanan           = 0;
+            $totalTunjanganJabatan  = 0;
+
+            foreach ($details as $det) {
+                $komp  = $det->komponenGaji;
+                if (!$komp) continue;
+
+                $n     = strtolower($komp->nama_gaji ?? '');
+                $val   = floatval($det->nominal_gaji);
+                $jenis = $komp->jenis ?? 'pendapatan';
+                $tipe  = $komp->tipe_hitung ?? 'tetap';
+
+                // Hitung subtotal nilai komponen berdasarkan basis hitungnya
+                $subtotal = match($tipe) {
+                    'per_jam'          => $totalJamKerjaBulan * $val,
+                    'per_hari'         => $totalMasuk * $val,
+                    'per_minggu'       => $fullWeeksCount * $val,
+                    'per_minggu_rajin' => $kerajinanWeeksCount * $val,
+                    default            => $val,
+                };
+
+                if ($jenis === 'potongan') {
+                    if (str_contains($n, 'perusahaan') || str_contains($n, 'kantor')) {
+                        $bpjsPerusahaanRate = $val;
+                    } elseif (str_contains($n, 'bpjs')) {
+                        $potonganBpjsRate += $subtotal;
+                    } else {
+                        $totalPotonganRutinLain += $subtotal;
+                    }
+                } else {
+                    // Kategori Pendapatan
+                    if ($tipe === 'per_jam') {
+                        $gajiPokokRate = $val;
+                        $totalGajiPokokHarian += $subtotal;
+                    } elseif ($tipe === 'per_hari') {
+                        $uangMakanRate = $val;
+                        $totalUangMakan += $subtotal;
+                    } elseif ($tipe === 'per_minggu') {
+                        $mingguanRate = $val;
+                        $totalMingguan += $subtotal;
+                    } elseif ($tipe === 'per_minggu_rajin') {
+                        $kerajinanRate = $val;
+                        $totalKerajinan += $subtotal;
+                    } else {
+                        if (str_contains($n, 'jabatan')) {
+                            $tunjanganJabatanRate = $val;
+                            $totalTunjanganJabatan += ($karyawan->id_jabatan && $val > 0) ? $val : 0;
+                        } else {
+                            $bulananRate += $val;
+                            $totalBulanan += $subtotal;
+                        }
+                    }
+                }
+            }
+
+            // Fallback hanya jika tidak ada komponen bertipe per_jam dan ada gaji_pokok di master karyawan
+            $hasComponentJam = $details->contains(fn($d) => ($d->komponenGaji?->tipe_hitung === 'per_jam'));
+            if (!$hasComponentJam && $gajiPokokRate <= 0 && $karyawan->gaji_pokok > 0) {
+                $gajiPokokRate = floatval($karyawan->gaji_pokok);
+                $totalGajiPokokHarian = $totalJamKerjaBulan * $gajiPokokRate;
+            }
 
             // 2. Overtime Calculation (UNPAID ONLY: whereDoesntHave detailPayrolls)
             $unpaidLemburs = Lembur::where('ID_karyawan', $id)
@@ -580,21 +598,25 @@ class PayrollController extends Controller
                 ->get();
 
             foreach ($details as $det) {
-                $n   = strtolower($det->komponenGaji->nama_gaji ?? '');
-                $val = floatval($det->nominal_gaji);
+                $komp = $det->komponenGaji;
+                if (!$komp || ($komp->jenis ?? 'pendapatan') === 'potongan') continue;
 
-                if (str_contains($n, 'pokok')) {
+                $n    = strtolower($komp->nama_gaji ?? '');
+                $val  = floatval($det->nominal_gaji);
+                $tipe = $komp->tipe_hitung ?? 'tetap';
+
+                if ($tipe === 'per_jam' || str_contains($n, 'pokok')) {
                     $gajiPokokPerJam = $val;
-                } elseif (str_contains($n, 'makan')) {
+                } elseif ($tipe === 'per_hari' || str_contains($n, 'makan')) {
                     $uangMakanPerHari = $val;
-                } elseif (str_contains($n, 'mingguan')) {
+                } elseif ($tipe === 'per_minggu' || str_contains($n, 'mingguan')) {
                     $nominalMingguan = $val;
-                } elseif (str_contains($n, 'bulanan')) {
-                    $nominalBulanan = $val;
-                } elseif (str_contains($n, 'kerajinan')) {
+                } elseif ($tipe === 'per_minggu_rajin' || str_contains($n, 'kerajinan')) {
                     $nominalKerajinan = $val;
                 } elseif (str_contains($n, 'jabatan')) {
                     $nominalTunjanganJabatan = $val;
+                } else {
+                    $nominalBulanan += $val;
                 }
             }
         }

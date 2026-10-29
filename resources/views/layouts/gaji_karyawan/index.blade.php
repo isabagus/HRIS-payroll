@@ -61,16 +61,14 @@
                         <th style="min-width: 150px;">DIVISI / JABATAN</th>
                         @foreach($komponens as $komp)
                             @php
-                                $n = strtolower($komp->nama_gaji);
-                                $unit = '';
-                                if (str_contains($n, 'pokok')) $unit = '/Jam';
-                                elseif (str_contains($n, 'makan')) $unit = '/Hari';
-                                elseif (str_contains($n, 'mingguan') || str_contains($n, 'kerajinan')) $unit = '/Mgg';
-                                else $unit = '/Bln';
+                                $isPotongan = ($komp->jenis ?? 'pendapatan') === 'potongan';
+                                $unit = $komp->satuan ?? '/Bln';
                             @endphp
-                            <th class="text-center" style="min-width: 140px;">
-                                {{ strtoupper($komp->nama_gaji) }}
-                                <span class="text-muted font-normal text-xs" style="display:block; font-size:10px; text-transform:none;">{{ $unit }}</span>
+                            <th class="text-center" style="min-width: 140px; {{ $isPotongan ? 'background: #fff1f2;' : '' }}">
+                                <span class="{{ $isPotongan ? 'text-rose-700' : '' }}">{{ strtoupper($komp->nama_gaji) }}</span>
+                                <span class="{{ $isPotongan ? 'text-rose-500 font-semibold' : 'text-muted font-normal' }} text-xs" style="display:block; font-size:10px; text-transform:none;">
+                                    {{ $isPotongan ? '[-] ' : '[+] ' }}{{ $unit }}
+                                </span>
                             </th>
                         @endforeach
                         <th class="text-right" style="min-width: 150px; background: #f0fdf4; color: #166534;">
@@ -85,17 +83,23 @@
                         $totalEstimasi = 0;
                         foreach ($komponens as $komp) {
                             $val = floatval($k->componentValues[$komp->ID_komponen_gaji] ?? 0);
-                            $n   = strtolower($komp->nama_gaji);
-                            if (str_contains($n, 'pokok')) {
-                                $totalEstimasi += ($val * 8 * 25);
-                            } elseif (str_contains($n, 'makan')) {
-                                $totalEstimasi += ($val * 25);
-                            } elseif (str_contains($n, 'mingguan') || str_contains($n, 'kerajinan')) {
-                                $totalEstimasi += ($val * 4);
+                            if ($val <= 0) continue;
+
+                            $nominal = match($komp->tipe_hitung) {
+                                'per_jam'          => $val * 8 * 26,
+                                'per_hari'         => $val * 26,
+                                'per_minggu',
+                                'per_minggu_rajin' => $val * 4,
+                                default            => $val,
+                            };
+
+                            if (($komp->jenis ?? 'pendapatan') === 'potongan') {
+                                $totalEstimasi -= $nominal;
                             } else {
-                                $totalEstimasi += $val;
+                                $totalEstimasi += $nominal;
                             }
                         }
+                        $totalEstimasi = max(0, $totalEstimasi);
                     @endphp
                     <tr>
                         <td class="text-center text-muted font-semibold">{{ $karyawans->firstItem() + $idx }}</td>

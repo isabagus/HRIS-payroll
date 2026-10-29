@@ -72,6 +72,7 @@
                         <th width="60">No</th>
                         <th>Nama Komponen Gaji</th>
                         <th width="140">Kategori</th>
+                        <th width="160">Basis Hitung</th>
                         <th width="80">Dibuat</th>
                         <th width="130" class="text-center">Aksi</th>
                     </tr>
@@ -104,6 +105,20 @@
                                     Pendapatan
                                 </span>
                             @endif
+                        </td>
+                        <td>
+                            @php
+                                $badgeStyle = match($komponen->tipe_hitung) {
+                                    'per_jam'          => 'bg-indigo-50 text-indigo-700 border-indigo-200',
+                                    'per_hari'         => 'bg-amber-50 text-amber-700 border-amber-200',
+                                    'per_minggu'       => 'bg-cyan-50 text-cyan-700 border-cyan-200',
+                                    'per_minggu_rajin' => 'bg-purple-50 text-purple-700 border-purple-200',
+                                    default            => 'bg-slate-100 text-slate-700 border-slate-200',
+                                };
+                            @endphp
+                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium border {{ $badgeStyle }}">
+                                {{ $komponen->label_tipe_hitung }}
+                            </span>
                         </td>
                         <td class="text-muted text-sm">{{ $komponen->created_at->format('d/m/Y') }}</td>
                         <td class="text-center">

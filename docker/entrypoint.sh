@@ -11,6 +11,11 @@ mkdir -p /var/www/public/images
 chown -R www-data:www-data /var/www/public/images /var/www/storage /var/www/bootstrap/cache
 chmod -R 775 /var/www/public/images /var/www/storage /var/www/bootstrap/cache
 
+# Jalankan migrasi database otomatis jika .env ada
+if [ -f /var/www/.env ]; then
+    php artisan migrate --force || true
+fi
+
 # Optimasi cache Laravel untuk production (hanya jika .env sudah ada)
 if [ -f /var/www/.env ]; then
     php artisan config:cache || true

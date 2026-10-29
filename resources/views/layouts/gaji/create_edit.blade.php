@@ -61,10 +61,24 @@
                 <label for="jenis" class="form-label">Kategori Komponen <span class="required-mark">*</span></label>
                 <div class="input-wrapper">
                     <select name="jenis" id="jenis" class="form-input" required>
-                        <option value="pendapatan" {{ old('jenis', $komponen->jenis ?? 'pendapatan') === 'pendapatan' ? 'selected' : '' }}>🟢 Pendapatan (Penambah Gaji / Tunjangan)</option>
-                        <option value="potongan" {{ old('jenis', $komponen->jenis ?? '') === 'potongan' ? 'selected' : '' }}>🔴 Potongan (Pengurang Gaji / Iuran)</option>
+                        <option value="pendapatan" {{ old('jenis', $komponen->jenis ?? 'pendapatan') === 'pendapatan' ? 'selected' : '' }}>Pendapatan (Penambah Penghasilan)</option>
+                        <option value="potongan" {{ old('jenis', $komponen->jenis ?? '') === 'potongan' ? 'selected' : '' }}>Potongan (Pengurang Penghasilan)</option>
                     </select>
                 </div>
+            </div>
+
+            <div class="form-group">
+                <label for="tipe_hitung" class="form-label">Basis Perhitungan <span class="required-mark">*</span></label>
+                <div class="input-wrapper">
+                    <select name="tipe_hitung" id="tipe_hitung" class="form-input" required>
+                        <option value="per_jam" {{ old('tipe_hitung', $komponen->tipe_hitung ?? '') === 'per_jam' ? 'selected' : '' }}>Per Jam Kerja (Total Jam Absensi x Tarif)</option>
+                        <option value="per_hari" {{ old('tipe_hitung', $komponen->tipe_hitung ?? '') === 'per_hari' ? 'selected' : '' }}>Per Hari Hadir (Jumlah Hari Masuk x Tarif)</option>
+                        <option value="per_minggu" {{ old('tipe_hitung', $komponen->tipe_hitung ?? '') === 'per_minggu' ? 'selected' : '' }}>Per Minggu Penuh (Jumlah Minggu Masuk Tanpa Alpha x Tarif)</option>
+                        <option value="per_minggu_rajin" {{ old('tipe_hitung', $komponen->tipe_hitung ?? '') === 'per_minggu_rajin' ? 'selected' : '' }}>Per Minggu Rajin (Jumlah Minggu Masuk Tanpa Telat &amp; Setengah Hari x Tarif)</option>
+                        <option value="tetap" {{ old('tipe_hitung', $komponen->tipe_hitung ?? 'tetap') === 'tetap' ? 'selected' : '' }}>Tetap / Bulanan (Nominal Tetap per Periode)</option>
+                    </select>
+                </div>
+                <p class="text-[11px] text-slate-400 mt-1">Menentukan formula kalkulasi otomatis komponen ini berdasarkan data kehadiran absensi karyawan.</p>
             </div>
 
             <div class="form-actions">
@@ -102,19 +116,31 @@
                             </svg>
                         </button>
                     </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div class="form-group" style="margin-bottom:0;">
                             <label class="form-label">Nama Komponen Gaji <span class="required-mark">*</span></label>
                             <div class="input-wrapper">
-                                <input type="text" name="items[0][nama_gaji]" class="form-input" placeholder="Contoh: Gaji Pokok, Tunjangan Makan, BPJS..." required>
+                                <input type="text" name="items[0][nama_gaji]" class="form-input comp-name-input" placeholder="Contoh: Gaji Pokok, Uang Makan, BPJS..." required oninput="detectTipeHitung(this, 0)">
                             </div>
                         </div>
                         <div class="form-group" style="margin-bottom:0;">
                             <label class="form-label">Kategori <span class="required-mark">*</span></label>
                             <div class="input-wrapper">
-                                <select name="items[0][jenis]" class="form-input" required>
-                                    <option value="pendapatan">🟢 Pendapatan (Penambah)</option>
-                                    <option value="potongan">🔴 Potongan (Pengurang)</option>
+                                <select name="items[0][jenis]" class="form-input comp-jenis-select" required>
+                                    <option value="pendapatan">Pendapatan (Penambah)</option>
+                                    <option value="potongan">Potongan (Pengurang)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label class="form-label">Basis Perhitungan <span class="required-mark">*</span></label>
+                            <div class="input-wrapper">
+                                <select name="items[0][tipe_hitung]" class="form-input comp-tipe-select" required>
+                                    <option value="per_jam">Per Jam Kerja (Total Jam Absensi x Tarif)</option>
+                                    <option value="per_hari">Per Hari Hadir (Jumlah Hari Masuk x Tarif)</option>
+                                    <option value="per_minggu">Per Minggu Penuh (Jumlah Minggu Masuk Tanpa Alpha x Tarif)</option>
+                                    <option value="per_minggu_rajin">Per Minggu Rajin (Jumlah Minggu Masuk Tanpa Telat &amp; Setengah Hari x Tarif)</option>
+                                    <option value="tetap" selected>Tetap / Bulanan (Nominal Tetap per Periode)</option>
                                 </select>
                             </div>
                         </div>
@@ -151,6 +177,31 @@
 <script>
 let itemIndex = 1;
 
+function detectTipeHitung(inputEl, idx) {
+    const card = inputEl.closest('.dynamic-row-card');
+    if (!card) return;
+    const name = inputEl.value.toLowerCase().trim();
+    const tipeSelect = card.querySelector('.comp-tipe-select');
+    const jenisSelect = card.querySelector('.comp-jenis-select');
+    if (!tipeSelect) return;
+
+    // Auto-detect kategori (pendapatan vs potongan)
+    if (name.includes('potongan') || name.includes('bpjs') || name.includes('kasbon') || name.includes('denda') || name.includes('iuran')) {
+        if (jenisSelect) jenisSelect.value = 'potongan';
+    }
+
+    // Auto-detect basis hitung
+    if (name.includes('pokok') || name.includes('jam')) {
+        tipeSelect.value = 'per_jam';
+    } else if (name.includes('makan') || name.includes('transport') || name.includes('harian')) {
+        tipeSelect.value = 'per_hari';
+    } else if (name.includes('mingguan')) {
+        tipeSelect.value = 'per_minggu';
+    } else if (name.includes('kerajinan')) {
+        tipeSelect.value = 'per_minggu_rajin';
+    }
+}
+
 document.getElementById('btn-add-gaji-row')?.addEventListener('click', function() {
     const container = document.getElementById('dynamic-gaji-rows');
     const newCard = document.createElement('div');
@@ -167,19 +218,31 @@ document.getElementById('btn-add-gaji-row')?.addEventListener('click', function(
                 </svg>
             </button>
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div class="form-group" style="margin-bottom:0;">
                 <label class="form-label">Nama Komponen Gaji <span class="required-mark">*</span></label>
                 <div class="input-wrapper">
-                    <input type="text" name="items[${itemIndex}][nama_gaji]" class="form-input" placeholder="Nama komponen gaji" required>
+                    <input type="text" name="items[${itemIndex}][nama_gaji]" class="form-input comp-name-input" placeholder="Nama komponen gaji" required oninput="detectTipeHitung(this, ${itemIndex})">
                 </div>
             </div>
             <div class="form-group" style="margin-bottom:0;">
                 <label class="form-label">Kategori <span class="required-mark">*</span></label>
                 <div class="input-wrapper">
-                    <select name="items[${itemIndex}][jenis]" class="form-input" required>
-                        <option value="pendapatan">🟢 Pendapatan (Penambah)</option>
-                        <option value="potongan">🔴 Potongan (Pengurang)</option>
+                    <select name="items[${itemIndex}][jenis]" class="form-input comp-jenis-select" required>
+                        <option value="pendapatan">Pendapatan (Penambah)</option>
+                        <option value="potongan">Potongan (Pengurang)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label">Basis Perhitungan <span class="required-mark">*</span></label>
+                <div class="input-wrapper">
+                    <select name="items[${itemIndex}][tipe_hitung]" class="form-input comp-tipe-select" required>
+                        <option value="per_jam">Per Jam Kerja (Total Jam Absensi x Tarif)</option>
+                        <option value="per_hari">Per Hari Hadir (Jumlah Hari Masuk x Tarif)</option>
+                        <option value="per_minggu">Per Minggu Penuh (Jumlah Minggu Masuk Tanpa Alpha x Tarif)</option>
+                        <option value="per_minggu_rajin">Per Minggu Rajin (Jumlah Minggu Masuk Tanpa Telat &amp; Setengah Hari x Tarif)</option>
+                        <option value="tetap" selected>Tetap / Bulanan (Nominal Tetap per Periode)</option>
                     </select>
                 </div>
             </div>

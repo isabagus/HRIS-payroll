@@ -107,42 +107,16 @@
                 <p class="text-[11px] text-slate-400 mt-1">Catatan ini akan tersimpan permanen dalam riwayat perkembangan gaji karyawan.</p>
             </div>
 
-            {{-- Gaji Pokok Harian --}}
-            @php
-                $gajiPokokVal = floatval($componentValues[1] ?? 0);
-                if ($gajiPokokVal <= 0) {
-                    foreach ($componentValues as $cId => $cNom) {
-                        $cModel = $komponens->firstWhere('ID_komponen_gaji', $cId);
-                        if ($cModel && str_contains(strtolower($cModel->nama_gaji), 'pokok')) {
-                            $gajiPokokVal = floatval($cNom);
-                            break;
-                        }
-                    }
-                }
-            @endphp
-            {{-- 1. GAJI POKOK --}}
-            <div class="p-4 rounded-xl bg-indigo-50/70 border border-indigo-100 mb-6">
-                <div class="flex items-center justify-between mb-1.5">
-                    <label class="form-label text-xs font-bold text-indigo-950 flex items-center gap-1.5 mb-0">
-                        <span class="w-2 h-2 rounded-full bg-indigo-600"></span>
-                        Gaji Pokok / Jam (Rp) <span class="text-rose-500">*</span>
-                    </label>
-                    <span class="text-[11px] font-medium text-indigo-700 bg-indigo-100/70 px-2 py-0.5 rounded-md">Basis Jam Kerja</span>
-                </div>
-                <input type="text" inputmode="numeric" name="gaji_pokok" class="form-input w-full text-base font-bold text-indigo-950 rounded-xl bg-white currency-input"
-                       value="{{ old('gaji_pokok', $gajiPokokVal ? number_format($gajiPokokVal, 0, ',', '.') : '') }}" placeholder="7.500" required>
-            </div>
-
             @php
                 $pendapatanKomps = $komponens->filter(function($k) {
-                    return ($k->jenis ?? 'pendapatan') === 'pendapatan' && !str_contains(strtolower($k->nama_gaji), 'pokok');
+                    return ($k->jenis ?? 'pendapatan') === 'pendapatan';
                 });
                 $potonganKomps = $komponens->filter(function($k) {
                     return ($k->jenis ?? 'pendapatan') === 'potongan';
                 });
             @endphp
 
-            {{-- 2. KOMPONEN PENDAPATAN & TUNJANGAN --}}
+            {{-- 1. KOMPONEN PENDAPATAN & TUNJANGAN --}}
             <div class="mb-6 p-4 sm:p-5 rounded-2xl bg-emerald-50/40 border border-emerald-100/80">
                 <div class="flex items-center justify-between mb-3.5 pb-2.5 border-b border-emerald-100">
                     <div class="flex items-center gap-2">
@@ -151,7 +125,7 @@
                         </div>
                         <div>
                             <h4 class="text-xs font-bold uppercase tracking-wider text-emerald-950">Komponen Pendapatan &amp; Tunjangan</h4>
-                            <p class="text-[11px] text-emerald-700">Tunjangan dan insentif yang menambah penghasilan karyawan</p>
+                            <p class="text-[11px] text-emerald-700">Komponen yang menambah penghasilan karyawan</p>
                         </div>
                     </div>
                     <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
@@ -160,21 +134,27 @@
                 </div>
 
                 @if($pendapatanKomps->isEmpty())
-                    <p class="text-xs text-slate-400 italic py-2">Belum ada komponen tunjangan tambahan selain gaji pokok.</p>
+                    <p class="text-xs text-slate-400 italic py-2">Belum ada komponen pendapatan terdaftar.</p>
                 @else
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         @foreach($pendapatanKomps as $komp)
                             @php
-                                $n = strtolower($komp->nama_gaji);
-                                $unit = '';
-                                if (str_contains($n, 'makan')) $unit = '(per hari hadir)';
-                                elseif (str_contains($n, 'mingguan') || str_contains($n, 'kerajinan')) $unit = '(per minggu penuh)';
-                                else $unit = '(per bulan)';
+                                $unit = match($komp->tipe_hitung) {
+                                    'per_jam'          => '(per jam kerja)',
+                                    'per_hari'         => '(per hari hadir)',
+                                    'per_minggu'       => '(per minggu penuh)',
+                                    'per_minggu_rajin' => '(per minggu rajin)',
+                                    default            => '(per bulan)',
+                                };
                                 $val = floatval($componentValues[$komp->ID_komponen_gaji] ?? 0);
+                                if ($val <= 0 && $komp->tipe_hitung === 'per_jam' && $karyawan->gaji_pokok > 0) {
+                                    $val = floatval($karyawan->gaji_pokok);
+                                }
                             @endphp
-                            <div class="form-group mb-0 bg-white p-3 rounded-xl border border-emerald-100/70 shadow-xs">
-                                <label class="form-label text-xs font-semibold text-slate-800 block mb-1">
-                                    {{ $komp->nama_gaji }} <span class="text-emerald-700 font-normal text-[11px]">{{ $unit }}</span>
+                            <div class="form-group mb-0 bg-white p-3 rounded-xl border {{ $komp->tipe_hitung === 'per_jam' ? 'border-indigo-200 ring-1 ring-indigo-100' : 'border-emerald-100/70' }} shadow-xs">
+                                <label class="form-label text-xs font-semibold text-slate-800 flex items-center justify-between mb-1">
+                                    <span>{{ $komp->nama_gaji }}</span>
+                                    <span class="text-emerald-700 font-normal text-[11px]">{{ $unit }}</span>
                                 </label>
                                 <div class="relative">
                                     <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-xs text-slate-400 font-semibold">Rp</span>
@@ -188,7 +168,7 @@
                 @endif
             </div>
 
-            {{-- 3. KOMPONEN POTONGAN RUTIN KARYAWAN --}}
+            {{-- 2. KOMPONEN POTONGAN RUTIN KARYAWAN --}}
             <div class="mb-6 p-4 sm:p-5 rounded-2xl bg-rose-50/40 border border-rose-100/80">
                 <div class="flex items-center justify-between mb-3.5 pb-2.5 border-b border-rose-100">
                     <div class="flex items-center gap-2">
@@ -197,7 +177,7 @@
                         </div>
                         <div>
                             <h4 class="text-xs font-bold uppercase tracking-wider text-rose-950">Komponen Potongan Rutin Karyawan</h4>
-                            <p class="text-[11px] text-rose-700">Potongan tetap per periode (BPJS Karyawan, Iuran, Koperasi, dll)</p>
+                            <p class="text-[11px] text-rose-700">Komponen yang mengurangi penghasilan karyawan</p>
                         </div>
                     </div>
                     <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-200">
@@ -211,11 +191,18 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         @foreach($potonganKomps as $komp)
                             @php
+                                $unit = match($komp->tipe_hitung) {
+                                    'per_jam'          => '(memotong per jam kerja)',
+                                    'per_hari'         => '(memotong per hari hadir)',
+                                    'per_minggu'       => '(memotong per minggu)',
+                                    default            => '(memotong per bulan)',
+                                };
                                 $val = floatval($componentValues[$komp->ID_komponen_gaji] ?? 0);
                             @endphp
                             <div class="form-group mb-0 bg-white p-3 rounded-xl border border-rose-100/70 shadow-xs">
-                                <label class="form-label text-xs font-semibold text-slate-800 block mb-1">
-                                    {{ $komp->nama_gaji }} <span class="text-rose-600 font-normal text-[11px]">(memotong gaji)</span>
+                                <label class="form-label text-xs font-semibold text-slate-800 flex items-center justify-between mb-1">
+                                    <span>{{ $komp->nama_gaji }}</span>
+                                    <span class="text-rose-600 font-normal text-[11px]">{{ $unit }}</span>
                                 </label>
                                 <div class="relative">
                                     <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-xs text-rose-400 font-semibold">Rp</span>
@@ -262,7 +249,30 @@
                 $isActive = $h->status === 'Aktif';
                 $badgeBg  = $isActive ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-slate-100 text-slate-600 border-slate-200';
                 $dotBg    = $isActive ? 'bg-emerald-500 ring-4 ring-emerald-100' : 'bg-slate-400';
-                $totalEst = $h->details->sum('nominal_gaji');
+
+                // Hitung estimasi bulanan secara fleksibel berdasarkan basis hitung tiap komponen
+                $totalEst = 0;
+                foreach ($h->details as $det) {
+                    $komp = $det->komponenGaji;
+                    $val  = floatval($det->nominal_gaji);
+                    if ($val <= 0 || !$komp) continue;
+
+                    $tipe = $komp->tipe_hitung ?? 'tetap';
+                    $bulananVal = match($tipe) {
+                        'per_jam'          => $val * 8 * 26,
+                        'per_hari'         => $val * 26,
+                        'per_minggu',
+                        'per_minggu_rajin' => $val * 4,
+                        default            => $val,
+                    };
+
+                    if (($komp->jenis ?? 'pendapatan') === 'potongan') {
+                        $totalEst -= $bulananVal;
+                    } else {
+                        $totalEst += $bulananVal;
+                    }
+                }
+                $totalEst = max(0, $totalEst);
             @endphp
             <div class="relative pl-6 sm:pl-8">
                 {{-- Dot indicator --}}
@@ -279,7 +289,7 @@
                             </span>
                         </div>
                         <span class="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 px-3 py-1 rounded-lg self-start sm:self-auto">
-                            Estimasi Total: Rp {{ number_format($totalEst, 0, ',', '.') }}
+                            Estimasi: Rp {{ number_format($totalEst, 0, ',', '.') }} / Bln
                         </span>
                     </div>
 
@@ -287,9 +297,16 @@
 
                     <div class="border-t border-slate-200/80 pt-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
                         @foreach($h->details as $det)
-                        <div class="flex items-center justify-between text-xs bg-white px-3 py-1.5 rounded-lg border border-slate-100">
-                            <span class="text-slate-600">{{ $det->komponenGaji->nama_gaji ?? 'Komponen' }}</span>
-                            <span class="font-semibold text-slate-800">Rp {{ number_format($det->nominal_gaji, 0, ',', '.') }}</span>
+                        @php
+                            $komp = $det->komponenGaji;
+                            $isPotongan = ($komp?->jenis ?? 'pendapatan') === 'potongan';
+                            $satuan = $komp?->satuan ?? '/Bln';
+                        @endphp
+                        <div class="flex items-center justify-between text-xs bg-white px-3 py-1.5 rounded-lg border {{ $isPotongan ? 'border-rose-100 bg-rose-50/30' : 'border-slate-100' }}">
+                            <span class="{{ $isPotongan ? 'text-rose-700 font-medium' : 'text-slate-600' }}">{{ $komp->nama_gaji ?? 'Komponen' }}</span>
+                            <span class="font-semibold {{ $isPotongan ? 'text-rose-700' : 'text-slate-800' }}">
+                                {{ $isPotongan ? '[-] ' : '' }}Rp {{ number_format($det->nominal_gaji, 0, ',', '.') }} <span class="text-[10px] text-slate-400 font-normal">{{ $satuan }}</span>
+                            </span>
                         </div>
                         @endforeach
                     </div>

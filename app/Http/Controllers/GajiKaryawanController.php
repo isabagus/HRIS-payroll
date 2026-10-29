@@ -130,40 +130,49 @@ class GajiKaryawanController extends Controller
             ]);
 
             // 3. Fetch currently valid component IDs to prevent foreign key violation
-            $validComponentIds = KomponenGaji::pluck('ID_komponen_gaji')->toArray();
+            $validComponents = KomponenGaji::all()->keyBy('ID_komponen_gaji');
+            $validComponentIds = $validComponents->keys()->toArray();
 
-            // 4. Save Gaji Pokok into detail_gaji_karyawans
+            // 4. Handle Gaji Pokok (legacy input support)
             $gajiPokokInput = $request->input('gaji_pokok');
-            $gajiPokokKomponen = KomponenGaji::where('nama_gaji', 'like', '%pokok%')->first();
+            $ratePerJam = 0;
 
-            if ($gajiPokokInput !== null && $gajiPokokKomponen) {
-                $cleanPokok = str_replace(['.', ','], '', (string)$gajiPokokInput);
-                DetailGajiKaryawan::create([
-                    'ID_gaji'          => $gajiHeader->ID_gaji,
-                    'ID_komponen_gaji' => $gajiPokokKomponen->ID_komponen_gaji,
-                    'nominal_gaji'     => max(0, floatval($cleanPokok)),
-                ]);
+            // 5. Save all component values to detail_gaji_karyawans
+            $komponenInputs = $request->input('komponen', []);
+            if (!is_array($komponenInputs)) {
+                $komponenInputs = [];
             }
 
-            // 5. Save all other component values to detail_gaji_karyawans
-            $komponenInputs = $request->input('komponen', []);
-            if (is_array($komponenInputs)) {
-                foreach ($komponenInputs as $idKomponen => $nominal) {
-                    if (!in_array($idKomponen, $validComponentIds)) continue; // Skip deleted components
-
-                    // Skip duplicate if Gaji Pokok was saved above
-                    if ($gajiPokokKomponen && $idKomponen == $gajiPokokKomponen->ID_komponen_gaji) {
-                        continue;
-                    }
-
-                    $cleanNom = str_replace(['.', ','], '', (string)($nominal ?? 0));
-                    $nom = max(0, floatval($cleanNom));
-                    DetailGajiKaryawan::create([
-                        'ID_gaji'          => $gajiHeader->ID_gaji,
-                        'ID_komponen_gaji' => $idKomponen,
-                        'nominal_gaji'     => $nom,
-                    ]);
+            // Jika form masih mengirim 'gaji_pokok' secara terpisah, masukkan ke array komponen
+            if ($gajiPokokInput !== null) {
+                $compJam = $validComponents->first(fn($c) => $c->tipe_hitung === 'per_jam')
+                    ?? $validComponents->first(fn($c) => str_contains(strtolower($c->nama_gaji), 'pokok'));
+                if ($compJam) {
+                    $komponenInputs[$compJam->ID_komponen_gaji] = $gajiPokokInput;
                 }
+            }
+
+            foreach ($komponenInputs as $idKomponen => $nominal) {
+                if (!in_array($idKomponen, $validComponentIds)) continue; // Skip deleted components
+
+                $comp = $validComponents[$idKomponen] ?? null;
+                $cleanNom = str_replace(['.', ','], '', (string)($nominal ?? 0));
+                $nom = max(0, floatval($cleanNom));
+
+                DetailGajiKaryawan::create([
+                    'ID_gaji'          => $gajiHeader->ID_gaji,
+                    'ID_komponen_gaji' => $idKomponen,
+                    'nominal_gaji'     => $nom,
+                ]);
+
+                if ($comp && $comp->tipe_hitung === 'per_jam' && $comp->jenis === 'pendapatan') {
+                    $ratePerJam = $nom;
+                }
+            }
+
+            // Sync master karyawan gaji_pokok jika ada rate per jam
+            if ($ratePerJam > 0) {
+                $karyawan->update(['gaji_pokok' => $ratePerJam]);
             }
 
             if ($request->ajax() || $request->wantsJson()) {
@@ -198,7 +207,28 @@ class GajiKaryawanController extends Controller
             ->orderBy('ID_gaji', 'desc')
             ->get()
             ->map(function ($gaji) {
-                $totalEstimasi = $gaji->details->sum('nominal_gaji');
+                $totalEstimasi = 0;
+                foreach ($gaji->details as $d) {
+                    $komp = $d->komponenGaji;
+                    $nom  = floatval($d->nominal_gaji);
+                    if ($nom <= 0 || !$komp) continue;
+
+                    $tipe = $komp->tipe_hitung ?? 'tetap';
+                    $bulananVal = match($tipe) {
+                        'per_jam'          => $nom * 8 * 26,
+                        'per_hari'         => $nom * 26,
+                        'per_minggu',
+                        'per_minggu_rajin' => $nom * 4,
+                        default            => $nom,
+                    };
+
+                    if (($komp->jenis ?? 'pendapatan') === 'potongan') {
+                        $totalEstimasi -= $bulananVal;
+                    } else {
+                        $totalEstimasi += $bulananVal;
+                    }
+                }
+                $totalEstimasi = max(0, $totalEstimasi);
                 return [
                     'ID_gaji'        => $gaji->ID_gaji,
                     'date_formatted' => $gaji->date ? $gaji->date->format('d F Y') : '-',
@@ -206,8 +236,11 @@ class GajiKaryawanController extends Controller
                     'keterangan'     => $gaji->keterangan ?: '-',
                     'total_estimasi' => $totalEstimasi,
                     'details'        => $gaji->details->map(fn($d) => [
-                        'nama_gaji' => $d->komponenGaji->nama_gaji ?? 'Komponen',
-                        'nominal'   => floatval($d->nominal_gaji)
+                        'nama_gaji'   => $d->komponenGaji->nama_gaji ?? 'Komponen',
+                        'jenis'       => $d->komponenGaji->jenis ?? 'pendapatan',
+                        'tipe_hitung' => $d->komponenGaji->tipe_hitung ?? 'tetap',
+                        'satuan'      => $d->komponenGaji->satuan ?? '/Bln',
+                        'nominal'     => floatval($d->nominal_gaji)
                     ])
                 ];
             });

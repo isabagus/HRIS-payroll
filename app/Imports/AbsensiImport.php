@@ -177,32 +177,32 @@ class AbsensiImport implements ToCollection
                     continue;
                 }
 
-                $jamKerjaMasuk  = trim((string) ($row[1]  ?? ''));
-                $jamKerjaPulang = trim((string) ($row[2]  ?? ''));
-                $durasiKerja    = trim((string) ($row[3]  ?? ''));
-                $jamMasuk       = trim((string) ($row[4]  ?? ''));
-                $jamPulang      = trim((string) ($row[5]  ?? ''));
-                $terlambat      = trim((string) ($row[6]  ?? ''));
-                $pulangCepat    = trim((string) ($row[7]  ?? ''));
-                $totalJamKerja  = trim((string) ($row[8]  ?? ''));
-                $istirahat      = trim((string) ($row[9]  ?? ''));
-                $lemburAwal     = trim((string) ($row[10] ?? ''));
-                $lemburAkhir    = trim((string) ($row[11] ?? ''));
-                $totalLembur    = trim((string) ($row[12] ?? ''));
+                $jamKerjaMasuk  = $this->parseExcelTime($row[1]  ?? null);
+                $jamKerjaPulang = $this->parseExcelTime($row[2]  ?? null);
+                $durasiKerja    = $this->parseExcelTime($row[3]  ?? null);
+                $jamMasuk       = $this->parseExcelTime($row[4]  ?? null);
+                $jamPulang      = $this->parseExcelTime($row[5]  ?? null);
+                $terlambat      = $this->parseExcelTime($row[6]  ?? null) ?? '00:00';
+                $pulangCepat    = $this->parseExcelTime($row[7]  ?? null) ?? '00:00';
+                $totalJamKerja  = $this->parseExcelTime($row[8]  ?? null) ?? '00:00';
+                $istirahat      = $this->parseExcelTime($row[9]  ?? null) ?? '01:00';
+                $lemburAwal     = $this->parseExcelTime($row[10] ?? null) ?? '00:00';
+                $lemburAkhir    = $this->parseExcelTime($row[11] ?? null) ?? '00:00';
+                $totalLembur    = $this->parseExcelTime($row[12] ?? null) ?? '00:00';
                 $masukKerja     = trim((string) ($row[13] ?? '1'));
                 $keterangan     = trim((string) ($row[14] ?? '-'));
 
                 $statusAbsensi   = 'Hadir';
                 $keteranganLower = strtolower(trim($keterangan));
 
-                if ($masukKerja === '0' || strtolower($keterangan) === 'libur' || $jamKerjaMasuk === '-') {
+                if ($masukKerja === '0' || strtolower($keterangan) === 'libur' || empty($jamKerjaMasuk)) {
                     $statusAbsensi = (strtolower($keterangan) === 'libur') ? 'Libur' : 'Alpha';
                 } elseif ($keteranganLower === 'setengah hari') {
                     $statusAbsensi = 'Setengah Hari';
                 } elseif (in_array($keteranganLower, ['izin', 'sakit', 'alpha'])) {
                     $statusAbsensi = ucfirst($keteranganLower);
                 } else {
-                    $valJamMasuk   = ($jamMasuk !== '-' && !empty($jamMasuk)) ? $jamMasuk : null;
+                    $valJamMasuk   = (!empty($jamMasuk) && $jamMasuk !== '-') ? $jamMasuk : null;
                     $statusAbsensi = AbsensiController::determineStatus($valJamMasuk, null, $keterangan);
                 }
 
@@ -212,11 +212,11 @@ class AbsensiImport implements ToCollection
                         'date'        => $tanggal,
                     ],
                     [
-                        'jam_kerja_masuk'  => $jamKerjaMasuk  !== '-' ? $jamKerjaMasuk  : null,
-                        'jam_kerja_pulang' => $jamKerjaPulang !== '-' ? $jamKerjaPulang : null,
-                        'durasi_kerja'     => $durasiKerja    !== '-' ? $durasiKerja    : null,
-                        'jam_masuk'        => $jamMasuk       !== '-' ? $jamMasuk       : null,
-                        'jam_pulang'       => $jamPulang      !== '-' ? $jamPulang      : null,
+                        'jam_kerja_masuk'  => $jamKerjaMasuk,
+                        'jam_kerja_pulang' => $jamKerjaPulang,
+                        'durasi_kerja'     => $durasiKerja,
+                        'jam_masuk'        => $jamMasuk,
+                        'jam_pulang'       => $jamPulang,
                         'terlambat'        => $terlambat,
                         'pulang_cepat'     => $pulangCepat,
                         'total_jam_kerja'  => $totalJamKerja,
@@ -318,8 +318,8 @@ class AbsensiImport implements ToCollection
                         'date'        => $tanggal,
                     ],
                     [
-                        'jam_masuk'      => $data['jam_masuk'] ?? null,
-                        'jam_pulang'     => $data['jam_pulang'] ?? null,
+                        'jam_masuk'      => $this->parseExcelTime($data['jam_masuk'] ?? null),
+                        'jam_pulang'     => $this->parseExcelTime($data['jam_pulang'] ?? null),
                         'status_absensi' => $status,
                         'keterangan'     => $data['keterangan'] ?? '-',
                     ]
@@ -341,6 +341,34 @@ class AbsensiImport implements ToCollection
                 $this->importErrors[] = "Baris {$excelRow}: {$alasan}";
             }
         }
+    }
+
+    private function parseExcelTime($value): ?string
+    {
+        if ($value === null || $value === '' || $value === '-') {
+            return null;
+        }
+
+        $value = trim((string) $value);
+
+        // Jika berupa pecahan desimal Excel (misal: 0.30902777777778)
+        if (is_numeric($value)) {
+            try {
+                return \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject((float) $value)->format('H:i');
+            } catch (\Exception $e) {
+                $totalSeconds = round((float) $value * 86400);
+                $hours = floor($totalSeconds / 3600) % 24;
+                $minutes = floor(($totalSeconds % 3600) / 60);
+                return sprintf('%02d:%02d', $hours, $minutes);
+            }
+        }
+
+        // Jika string sudah ada format waktu (misal "07:25:00" atau "07:25")
+        if (preg_match('/^(\d{1,2}):(\d{2})/', $value, $matches)) {
+            return sprintf('%02d:%02d', $matches[1], $matches[2]);
+        }
+
+        return mb_substr($value, 0, 10);
     }
 
     private function parseExcelDate($value)
